@@ -1,0 +1,16 @@
+# Replace the handles below with the real GitHub usernames.
+*                          @aarif-handle
+/app/static/               @abrar-handle
+/app/templates/            @abrar-handle
+/app/routes/student.py     @abrar-handle
+/app/routes/organizer.py   @mishar-handle
+/app/templates/organizer/  @mishar-handle
+/app/routes/logistics.py   @mishar-handle
+/app/templates/logistics/  @mishar-handle
+/app/static/js/scanner.js  @mishar-handle
+/app/services/logistics.py @mishar-handle
+/app/services/volunteering.py @mishar-handle
+/app/routes/faculty.py     @hameem-handle
+/app/templates/faculty/    @hameem-handle
+/docs/                     @hameem-handle
+/README.md                 @hameem-handle
