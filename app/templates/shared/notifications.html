@@ -1,0 +1,26 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, empty_state, csrf %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+{% call page_header('Notifications', 'Updates about your events, approvals and certificates.') %}
+  {% if items %}<form method="post" action="{{ url_for('main.notifications_read') }}">{{ csrf() }}
+    <button class="btn btn-outline-secondary btn-sm" type="submit">Mark all as read</button></form>{% endif %}
+{% endcall %}
+<div class="ch-card">
+  {% if items %}
+  <ul class="ch-list">
+    {% for n in items %}
+    <li class="ch-row">
+      <div>
+        {% if not n.is_read %}<span class="ch-badge ch-badge-info me-2">New</span>{% endif %}
+        {% if n.link and n.link.startswith('/') %}<a href="{{ n.link }}">{{ n.message }}</a>{% else %}{{ n.message }}{% endif %}
+        <span class="ch-sub">{{ n.created_at|fmt_datetime }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    {{ empty_state('bi-bell', 'You are all caught up', 'Notifications will appear here when something needs your attention.') }}
+  {% endif %}
+</div>
+{% endblock %}

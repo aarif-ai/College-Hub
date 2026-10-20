@@ -1,0 +1,17 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, meter, empty_state %}
+{% block title %}Clubs & activity{% endblock %}
+{% block content %}
+{% call page_header('Clubs & student activity', 'Published events and attendance by community.') %}{% endcall %}
+<div class="ch-card">
+  {% if rows %}
+  <div class="ch-table-wrap"><table class="ch-table">
+    <thead><tr><th>Club</th><th class="num">Published events</th><th class="num">Registrations</th><th class="num">Attended</th><th>Attendance</th></tr></thead>
+    <tbody>{% for r in rows %}
+      <tr><td><i class="bi {{ r.club.icon or 'bi-people' }} me-2 ch-muted"></i><strong>{{ r.club.name }}</strong><span class="ch-sub">{{ r.club.category }}</span></td>
+        <td class="num">{{ r.events }}</td><td class="num">{{ r.registered }}</td><td class="num">{{ r.attended }}</td>
+        <td style="min-width:140px">{{ meter(r.attendance_rate, '', 'good') }}<span class="ch-sub">{{ r.attendance_rate }}%</span></td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}{{ empty_state('bi-people', 'No clubs yet') }}{% endif %}
+</div>
+{% endblock %}

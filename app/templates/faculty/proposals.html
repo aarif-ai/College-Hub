@@ -1,0 +1,26 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, status_badge, empty_state %}
+{% block title %}Event proposals{% endblock %}
+{% block content %}
+{% call page_header('Event proposals', 'Review submitted events. Approval creates the logistics checklist.') %}{% endcall %}
+<h2 class="mb-3">Pending review ({{ pending|length }})</h2>
+<div class="ch-card mb-4">
+  {% if pending %}
+  <div class="ch-table-wrap"><table class="ch-table">
+    <thead><tr><th>Event</th><th>Organizer</th><th>Date</th><th>Submitted</th><th></th></tr></thead>
+    <tbody>{% for e in pending %}
+      <tr><td><a class="ch-table-title" href="{{ url_for('faculty.review', event_id=e.id) }}">{{ e.title }}</a><span class="ch-sub">{{ e.category }} &middot; {{ e.venue }}</span></td>
+        <td>{{ e.organizer.name }}</td><td>{{ e.event_date|fmt_short_date }}</td><td>{{ e.submitted_at|fmt_datetime }}</td>
+        <td class="text-end"><a class="btn btn-primary btn-sm" href="{{ url_for('faculty.review', event_id=e.id) }}">Review</a></td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}{{ empty_state('bi-check2-all', 'No pending proposals', 'New submissions from organizers will appear here.') }}{% endif %}
+</div>
+<h2 class="mb-3">Recently decided</h2>
+<div class="ch-card">
+  {% if recent %}
+  <ul class="ch-list">{% for e in recent %}
+    <li class="ch-row"><div><a class="ch-table-title" href="{{ url_for('faculty.review', event_id=e.id) }}">{{ e.title }}</a><span class="ch-sub">{{ e.organizer.name }} &middot; decided {{ e.reviewed_at|fmt_datetime if e.reviewed_at else '-' }}</span></div>{{ status_badge(e.status) }}</li>
+  {% endfor %}</ul>
+  {% else %}{{ empty_state('bi-clock-history', 'No decisions yet') }}{% endif %}
+</div>
+{% endblock %}

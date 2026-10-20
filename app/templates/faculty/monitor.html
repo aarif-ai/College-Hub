@@ -1,0 +1,23 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, status_badge, meter, empty_state %}
+{% block title %}Monitor events{% endblock %}
+{% block content %}
+{% call page_header('Monitor events', 'Participation, attendance and readiness across every event.') %}{% endcall %}
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link {{ 'active' if not status }}" href="{{ url_for('faculty.monitor') }}">All</a></li>
+  {% for s in C.EVENT_STATUSES %}<li class="nav-item"><a class="nav-link {{ 'active' if status == s }}" href="{{ url_for('faculty.monitor', status=s) }}">{{ C.STATUS_LABELS[s] }}</a></li>{% endfor %}
+</ul>
+<div class="ch-card">
+  {% if rows %}
+  <div class="ch-table-wrap"><table class="ch-table">
+    <thead><tr><th>Event</th><th>Date</th><th>Status</th><th class="num">Registered</th><th class="num">Attended</th><th>Readiness</th><th></th></tr></thead>
+    <tbody>{% for e, s in rows %}
+      <tr><td><a class="ch-table-title" href="{{ url_for('faculty.report', event_id=e.id) }}">{{ e.title }}</a><span class="ch-sub">{{ e.organizer.name }}</span></td>
+        <td>{{ e.event_date|fmt_short_date }}</td><td>{{ status_badge(e.status) }}</td>
+        <td class="num">{{ s.registered }}/{{ e.capacity }}</td><td class="num">{{ s.attended }}</td>
+        <td style="min-width:130px">{{ meter(s.readiness, '', 'good' if s.readiness == 100 else '') }}<span class="ch-sub">{{ s.readiness }}%</span></td>
+        <td class="text-end"><a class="btn btn-outline-secondary btn-sm" href="{{ url_for('faculty.report', event_id=e.id) }}">Report</a></td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}{{ empty_state('bi-activity', 'No events match this filter') }}{% endif %}
+</div>
+{% endblock %}

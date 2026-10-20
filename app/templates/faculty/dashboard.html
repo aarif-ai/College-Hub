@@ -1,0 +1,56 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, section_title, status_badge, empty_state, meter %}
+{% block title %}Faculty dashboard{% endblock %}
+{% block content %}
+{% call page_header('Faculty dashboard', 'Institutional oversight of campus events and student participation.') %}
+  <a class="btn btn-primary" href="{{ url_for('faculty.proposals') }}"><i class="bi bi-inbox me-1"></i>Review proposals{% if overview.pending %} ({{ overview.pending }}){% endif %}</a>
+{% endcall %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">{{ stat_card('Pending proposals', overview.pending, 'bi-hourglass-split', href=url_for('faculty.proposals'), tone='warn' if overview.pending else '') }}</div>
+  <div class="col-6 col-xl-3">{{ stat_card('Approved, not yet live', overview.approved, 'bi-check2-square', href=url_for('faculty.monitor', status='approved')) }}</div>
+  <div class="col-6 col-xl-3">{{ stat_card('Published events', overview.published, 'bi-broadcast', href=url_for('faculty.monitor', status='published'), tone='good') }}</div>
+  <div class="col-6 col-xl-3">{{ stat_card('Overall attendance', overview.attendance_rate ~ '%', 'bi-qr-code-scan', hint=overview.attendance ~ ' of ' ~ overview.registrations ~ ' registered', tone='gold') }}</div>
+</div>
+<div class="ch-card ch-card-body mb-4">
+  <div class="ch-row">
+    <div><strong>Organizing Committee account</strong>
+      <span class="ch-sub">{% if organizer_account %}@{{ organizer_account.username }} &middot; {{ organizer_account.account_status|capitalize }}{% else %}Not created yet{% endif %}. You manage this account; the Organizer manages Logistics and verifies students.</span></div>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('faculty.organizer_account') }}"><i class="bi bi-key me-1"></i>Manage Organizer account</a>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-6">
+    {{ section_title('Awaiting your review', 'All proposals', url_for('faculty.proposals')) }}
+    <div class="ch-card">
+      {% if pending %}<ul class="ch-list">{% for e in pending %}
+        <li class="ch-row"><div><a class="ch-table-title" href="{{ url_for('faculty.review', event_id=e.id) }}">{{ e.title }}</a>
+          <span class="ch-sub">{{ e.organizer.name }} &middot; {{ e.event_date|fmt_short_date }} &middot; {{ e.category }}</span></div>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('faculty.review', event_id=e.id) }}">Review</a></li>
+      {% endfor %}</ul>
+      {% else %}{{ empty_state('bi-check2-all', 'Nothing waiting', 'All submitted proposals have been reviewed.') }}{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-6">
+    {{ section_title('Logistics readiness', 'Monitor events', url_for('faculty.monitor')) }}
+    <div class="ch-card ch-card-body">
+      {% if upcoming_ready %}<div class="d-grid gap-3">{% for e, r in upcoming_ready %}
+        <div><div class="d-flex justify-content-between"><a class="ch-table-title small" href="{{ url_for('faculty.report', event_id=e.id) }}">{{ e.title }}</a>{{ status_badge(e.status) }}</div>
+          <div class="mt-2">{{ meter(r.percent, e.event_date|fmt_short_date ~ ' · ' ~ r.completed ~ '/' ~ r.total ~ ' tasks', 'good' if r.percent == 100 else '') }}</div></div>
+      {% endfor %}</div>{% else %}<p class="ch-muted small mb-0">No upcoming approved events.</p>{% endif %}
+    </div>
+  </div>
+  <div class="col-12">
+    {{ section_title('Participation by event', 'Full report', url_for('faculty.monitor')) }}
+    <div class="ch-card">
+      {% if overview.rows %}
+      <div class="ch-table-wrap"><table class="ch-table">
+        <thead><tr><th>Event</th><th>Date</th><th class="num">Registered</th><th class="num">Attended</th><th>Attendance</th></tr></thead>
+        <tbody>{% for e, s in overview.rows[:6] %}
+          <tr><td><a class="ch-table-title" href="{{ url_for('faculty.report', event_id=e.id) }}">{{ e.title }}</a></td><td>{{ e.event_date|fmt_short_date }}</td>
+            <td class="num">{{ s.registered }}/{{ e.capacity }}</td><td class="num">{{ s.attended }}</td><td style="min-width:140px">{{ meter(s.attendance_rate, '', 'good') }}<span class="ch-sub">{{ s.attendance_rate }}%</span></td></tr>
+        {% endfor %}</tbody></table></div>
+      {% else %}{{ empty_state('bi-activity', 'No published events yet') }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

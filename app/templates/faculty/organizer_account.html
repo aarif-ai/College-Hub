@@ -1,0 +1,16 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, account_badge %}
+{% block title %}Organizer account{% endblock %}
+{% block content %}
+{% call page_header('Organizer account', 'You manage the one official Organizing Committee account.') %}{% endcall %}
+<div class="ch-card ch-card-body mb-4">
+  <div class="ch-hierarchy">
+    <div class="step"><i class="bi bi-mortarboard"></i><span><strong>Faculty Mentor</strong> (you) &mdash; manages the Organizer account</span></div>
+    <div class="step ms-3"><i class="bi bi-arrow-return-right"></i><span><strong>Organizing Committee</strong> &mdash; verifies students, manages events, volunteers and the Logistics account</span></div>
+    <div class="step ms-5"><i class="bi bi-arrow-return-right"></i><span><strong>Logistics team</strong>
+      {% if logistics_account %}&mdash; {{ account_badge(logistics_account) }} (managed by the Organizer){% else %}&mdash; not created yet{% endif %}</span></div>
+  </div>
+</div>
+{% set role_name = 'Organizer' %}{% set manager_name = 'Faculty' %}
+{% include "partials/_staff_account.html" %}
+{% endblock %}

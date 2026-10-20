@@ -1,0 +1,67 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, status_badge, csrf, post_button, meter, badge %}
+{% block title %}Review: {{ event.title }}{% endblock %}
+{% block content %}
+<nav class="small mb-3"><a class="ch-link" href="{{ url_for('faculty.proposals') }}"><i class="bi bi-arrow-left"></i> Proposals</a></nav>
+{% call page_header(event.title, 'Proposal review') %}{{ status_badge(event.status) }}{% endcall %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="ch-card ch-card-body mb-4">
+      <h2 class="mb-3">Event details</h2>
+      <dl class="ch-kv mb-4">
+        <dt>Category</dt><dd>{{ event.category }}</dd>
+        <dt>Club</dt><dd>{{ event.club.name if event.club else '-' }}</dd>
+        <dt>Date</dt><dd>{{ event.event_date|fmt_date }}</dd>
+        <dt>Time</dt><dd>{{ event.start_time|fmt_time }} &ndash; {{ event.end_time|fmt_time }}</dd>
+        <dt>Venue</dt><dd>{{ event.venue }}</dd>
+        <dt>Capacity</dt><dd>{{ event.capacity }}</dd>
+        <dt>Registration deadline</dt><dd>{{ event.registration_deadline|fmt_datetime }}</dd>
+        <dt>Submitted</dt><dd>{{ event.submitted_at|fmt_datetime }}</dd>
+      </dl>
+      <h3 class="mb-2">Description</h3>
+      <p class="ch-prewrap mb-0">{{ event.description }}</p>
+    </div>
+    <div class="ch-card mb-4">
+      <div class="ch-card-head"><h2>Supporting documents</h2></div>
+      {% if event.documents %}<ul class="ch-list">{% for d in event.documents %}
+        <li class="ch-row"><div><i class="bi bi-file-earmark-pdf text-danger me-1"></i>{{ d.original_filename }}<span class="ch-sub">{{ d.page_count }} pages</span></div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.document_download', document_id=d.id) }}">Download</a></li>
+      {% endfor %}</ul>
+      {% else %}<div class="ch-card-body ch-muted small">No documents were attached.</div>{% endif %}
+    </div>
+    <div class="ch-card">
+      <div class="ch-card-head"><h2>Organizer</h2></div>
+      <div class="ch-card-body">
+        <p class="mb-1"><strong>{{ organizer.name }}</strong> <span class="ch-muted">&middot; {{ organizer.email }}</span></p>
+        <p class="small ch-muted">{{ organizer.department or 'Department not set' }}</p>
+        <h3 class="mt-3 mb-2 fs-6">Previously published events ({{ past_events|length }})</h3>
+        {% if past_events %}<ul class="small ps-3 mb-0">{% for p in past_events %}
+          <li>{{ p.title }}, {{ past_stats[p.id].attended }}/{{ past_stats[p.id].registered }} attended ({{ past_stats[p.id].attendance_rate }}%)</li>{% endfor %}</ul>
+        {% else %}<p class="small ch-muted mb-0">This organizer has no published events yet.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="ch-card ch-card-body ch-sticky-side">
+      <h2 class="mb-3">Decision</h2>
+      {% if event.status == 'submitted' %}
+      <form method="post" action="{{ url_for('faculty.decide', event_id=event.id) }}">
+        {{ csrf() }}
+        <div class="mb-3"><label class="form-label" for="remarks">Remarks <span class="ch-muted">(required to reject)</span></label>
+          <textarea class="form-control" id="remarks" name="remarks" rows="4" maxlength="1000" placeholder="Feedback for the organizer"></textarea></div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-success" type="submit" name="decision" value="approve"><i class="bi bi-check-lg me-1"></i>Approve event</button>
+          <button class="btn btn-outline-danger" type="submit" name="decision" value="reject"><i class="bi bi-x-lg me-1"></i>Reject with remarks</button>
+        </div>
+      </form>
+      {% else %}
+        <p class="small">This event is <strong>{{ event.status_label|lower }}</strong>.</p>
+        {% if event.faculty_remarks %}<p class="small"><strong>Remarks:</strong> {{ event.faculty_remarks }}</p>{% endif %}
+        {% if event.reviewer %}<p class="small ch-muted">Reviewed by {{ event.reviewer.name }}, {{ event.reviewed_at|fmt_datetime }}</p>{% endif %}
+        {% if event.status == 'approved' %}{{ post_button(url_for('faculty.publish', event_id=event.id), 'Publish on organizer\'s behalf', 'outline-secondary', 'bi-broadcast', 'Publish this event now?') }}{% endif %}
+        <a class="btn btn-outline-secondary btn-sm mt-2" href="{{ url_for('faculty.report', event_id=event.id) }}">Open event report</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
