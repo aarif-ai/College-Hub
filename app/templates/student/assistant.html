@@ -1,0 +1,51 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, empty_state %}
+{% block title %}AI Event Assistant{% endblock %}
+{% block content %}
+{% call page_header('AI Event Assistant', 'Ask about any published event. Answers come only from official details and uploaded documents.') %}
+  {% if ai_demo_mode %}<span class="ch-badge ch-badge-info"><i class="bi bi-cpu"></i>Demo mode: no AI key set</span>{% endif %}
+{% endcall %}
+{% if not events %}
+  <div class="ch-card">{{ empty_state('bi-chat-square-text', 'No events to ask about yet', 'Once events are published you can ask questions here.') }}</div>
+{% else %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="ch-card">
+      <div class="ch-card-head">
+        <label class="form-label mb-0" for="chat-event">Event</label>
+        <select id="chat-event" class="form-select" style="max-width:420px" data-chat-event>
+          {% for e in events %}<option value="{{ e.id }}" {{ 'selected' if e.id == selected }}>{{ e.title }}{{ ' (registered)' if e.id in registered_ids }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="ch-chat" data-ai-chat data-event-id="{{ selected }}">
+        <div class="ch-chat-log" data-chat-log aria-live="polite">
+          <div class="ch-msg ch-msg-ai">Hello! Choose an event above and ask me anything about it.</div>
+        </div>
+        <div class="ch-suggest">
+          <button type="button" data-suggest="When does the event start?">When does it start?</button>
+          <button type="button" data-suggest="Where is the venue?">Where is it?</button>
+          <button type="button" data-suggest="What is the registration deadline?">Registration deadline?</button>
+          <button type="button" data-suggest="What should I bring?">What should I bring?</button>
+        </div>
+        <form class="ch-chat-form" data-chat-form data-no-loading>
+          <input class="form-control" name="question" maxlength="300" autocomplete="off" placeholder="Type your question" aria-label="Your question">
+          <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i><span class="visually-hidden">Send</span></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">How it works</h2>
+      <ul class="small ch-muted ps-3 mb-0 d-grid gap-2">
+        <li>It reads the official event listing and the PDFs organizers upload.</li>
+        <li>Each answer shows its source document and page.</li>
+        <li>If the answer is not written there, it says so instead of guessing.</li>
+        <li>For anything else, contact the organizer directly.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>{% endblock %}
