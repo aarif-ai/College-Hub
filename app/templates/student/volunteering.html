@@ -1,0 +1,52 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, empty_state, badge, csrf %}
+{% block title %}Volunteering{% endblock %}
+{% block content %}
+{% call page_header('Volunteering', 'Help run events, build experience and earn achievements.') %}{% endcall %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <h2 class="mb-3">Open opportunities</h2>
+    {% if opportunities %}
+    <div class="d-grid gap-3">
+      {% for o in opportunities %}
+      {% set app_ = applications.get(o.id) %}
+      <div class="ch-card ch-card-body">
+        <div class="ch-row mb-2">
+          <div><h3 class="mb-0">{{ o.title }}</h3>
+            <span class="ch-sub">{% if o.event %}<a href="{{ url_for('main.event_detail', event_id=o.event.id) }}">{{ o.event.title }}</a> &middot; {{ o.event.event_date|fmt_short_date }}{% else %}General opportunity{% endif %}</span></div>
+          {{ badge(o.slots_left ~ ' slot' ~ ('' if o.slots_left == 1 else 's') ~ ' left', 'neutral') }}
+        </div>
+        <p class="small mb-3">{{ o.description }}</p>
+        {% if app_ %}
+          {{ badge(app_.status|capitalize, {'pending':'warning','approved':'success','rejected':'danger'}[app_.status]) }}
+        {% elif o.slots_left <= 0 %}
+          {{ badge('Full', 'danger') }}
+        {% elif not current_user.is_verified %}
+          <div class="small ch-muted"><i class="bi bi-lock me-1"></i>Only Verified CollegeHub Members can volunteer. <a href="{{ url_for('student.profile') }}#verification">See verification status</a></div>
+        {% else %}
+        <form method="post" action="{{ url_for('student.volunteer_apply', opp_id=o.id) }}" class="d-flex flex-wrap gap-2">
+          {{ csrf() }}
+          <input class="form-control flex-grow-1" style="min-width:200px;width:auto" name="message" maxlength="400" placeholder="Why would you like to help? (optional)" aria-label="Message to organizer">
+          <button class="btn btn-primary" type="submit">Apply</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="ch-card">{{ empty_state('bi-hand-thumbs-up', 'No open opportunities', 'Opportunities appear when organizers publish events that need help.') }}</div>
+    {% endif %}
+  </div>
+  <div class="col-lg-4">
+    <h2 class="mb-3">My applications</h2>
+    <div class="ch-card">
+      {% if history %}
+      <ul class="ch-list">{% for a in history %}
+        <li class="ch-row"><div><strong class="small">{{ a.opportunity.title }}</strong><span class="ch-sub">{% if a.assignment %}Responsibility: {{ a.assignment }}{% else %}Applied {{ a.created_at|fmt_short_date }}{% endif %}</span></div>
+          {{ badge(a.status|capitalize, {'pending':'warning','approved':'success','rejected':'danger'}[a.status]) }}</li>
+      {% endfor %}</ul>
+      {% else %}{{ empty_state('bi-inbox', 'No applications yet') }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

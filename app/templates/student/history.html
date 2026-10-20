@@ -1,0 +1,21 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, empty_state %}
+{% block title %}Participation history{% endblock %}
+{% block content %}
+{% call page_header('Participation history', 'Your journey on CollegeHub, newest first.') %}{% endcall %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">{{ stat_card('Registered', stats.registered, 'bi-ticket-perforated') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Attended', stats.attended, 'bi-qr-code-scan', tone='good') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Attendance rate', stats.attendance_rate ~ '%', 'bi-graph-up') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Volunteer roles', stats.volunteering, 'bi-hand-thumbs-up', tone='gold') }}</div>
+</div>
+<div class="ch-card ch-card-body">
+  {% if entries %}
+  <ul class="ch-timeline">
+    {% for when, kind, text, link in entries %}
+    <li class="k-{{ kind }}"><time>{{ when|fmt_datetime }}</time><a href="{{ link }}">{{ text }}</a></li>
+    {% endfor %}
+  </ul>
+  {% else %}{{ empty_state('bi-clock-history', 'Nothing here yet', 'Register for an event to start your history.', 'Explore events', url_for('main.events')) }}{% endif %}
+</div>
+{% endblock %}
