@@ -1,0 +1,48 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, status_badge, stat_card, meter, task_badge, badge, empty_state %}
+{% block title %}Report: {{ event.title }}{% endblock %}
+{% block content %}
+<nav class="small mb-3 no-print"><a class="ch-link" href="{{ url_for('faculty.monitor') }}"><i class="bi bi-arrow-left"></i> Monitor events</a></nav>
+{% call page_header(event.title, event.event_date|fmt_date ~ ' · ' ~ event.venue ~ ' · Organizer: ' ~ event.organizer.name) %}
+  {{ status_badge(event.status) }}
+  {% if event.status == 'published' and event.start_datetime <= now_local %}
+    <form method="post" action="{{ url_for('faculty.complete', event_id=event.id) }}" class="d-inline" data-confirm="Mark this event as completed? Check-in scanning will close.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-success btn-sm" type="submit"><i class="bi bi-flag me-1"></i>Mark completed</button></form>
+  {% endif %}
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print report</button>
+{% endcall %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">{{ stat_card('Registered', stats.registered ~ ' / ' ~ event.capacity, 'bi-ticket-perforated', hint=stats.fill_rate ~ '% full') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Attended', stats.attended, 'bi-qr-code-scan', hint=stats.attendance_rate ~ '% attendance', tone='good') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Certificates issued', stats.certificates, 'bi-patch-check', tone='gold') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Volunteers', stats.volunteers, 'bi-hand-thumbs-up') }}</div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ch-card ch-card-body mb-4">
+      <h2 class="mb-3">Logistics readiness</h2>
+      {{ meter(readiness.percent, readiness.completed ~ ' of ' ~ readiness.total ~ ' tasks completed', 'good' if readiness.percent == 100 else '') }}
+      <p class="small ch-muted mt-2 mb-0">{{ readiness.pending }} pending &middot; {{ readiness.in_progress }} in progress</p>
+    </div>
+    <div class="ch-card">
+      <div class="ch-card-head"><h2>Checklist</h2></div>
+      {% if event.tasks %}<ul class="ch-list">{% for t in event.tasks %}
+        <li class="ch-row"><div><span class="small">{{ t.title }}</span><span class="ch-sub">{{ t.assigned_to or 'Unassigned' }}</span></div>{{ task_badge(t.status) }}</li>
+      {% endfor %}</ul>{% else %}{{ empty_state('bi-clipboard', 'No checklist yet', 'It is created when the event is approved.') }}{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="ch-card">
+      <div class="ch-card-head"><h2>Participants</h2></div>
+      {% if registrations %}
+      <div class="ch-table-wrap"><table class="ch-table">
+        <thead><tr><th>Student</th><th>Department</th><th>Status</th></tr></thead>
+        <tbody>{% for r in registrations %}
+          <tr><td>{{ r.student.name }}<span class="ch-sub ch-code">{{ r.reg_code }}</span></td><td>{{ r.student.department }}</td>
+            <td>{% if not r.is_confirmed %}{{ badge('Cancelled','danger') }}{% elif r.attendance %}{{ badge('Attended ' ~ (r.attendance.scanned_at|fmt_time),'success','bi-check2') }}{% else %}{{ badge('Registered','info') }}{% endif %}</td></tr>
+        {% endfor %}</tbody></table></div>
+      {% else %}{{ empty_state('bi-people', 'No participants yet') }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

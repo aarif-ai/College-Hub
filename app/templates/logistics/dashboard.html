@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, status_badge, meter, empty_state %}
+{% block title %}Logistics dashboard{% endblock %}
+{% block content %}
+{% call page_header('Logistics dashboard', 'Prepare approved events and run check-in on the day.') %}{% endcall %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-4">{{ stat_card('Upcoming events', upcoming|length, 'bi-calendar-event') }}</div>
+  <div class="col-6 col-lg-4">{{ stat_card('Open tasks', open_tasks, 'bi-clipboard-check', tone='warn' if open_tasks else 'good') }}</div>
+  <div class="col-12 col-lg-4">{{ stat_card('Past events', past|length, 'bi-archive') }}</div>
+</div>
+<h2 class="mb-3">Upcoming events</h2>
+{% if upcoming %}
+<div class="row g-3 mb-4">
+  {% for e, r in upcoming %}
+  <div class="col-md-6 col-xl-4">
+    <div class="ch-card ch-card-body h-100 d-flex flex-column">
+      <div class="d-flex justify-content-between gap-2 mb-1"><span class="ch-chip"><i class="bi {{ e.icon }}"></i>{{ e.category }}</span>{{ status_badge(e.status) }}</div>
+      <h3 class="mb-1"><a class="ch-table-title" href="{{ url_for('logistics.event', event_id=e.id) }}">{{ e.title }}</a></h3>
+      <span class="ch-sub mb-3">{{ e.event_date|fmt_date }} &middot; {{ e.start_time|fmt_time }} &middot; {{ e.venue }}</span>
+      {{ meter(r.percent, 'Readiness (' ~ r.completed ~ '/' ~ r.total ~ ')', 'good' if r.percent == 100 else '') }}
+      <div class="d-flex gap-2 mt-auto pt-3">
+        <a class="btn btn-outline-secondary btn-sm flex-fill" href="{{ url_for('logistics.event', event_id=e.id) }}">Checklist</a>
+        {% if e.status == 'published' %}<a class="btn btn-primary btn-sm flex-fill" href="{{ url_for('logistics.scanner', event_id=e.id) }}"><i class="bi bi-qr-code-scan me-1"></i>Scan</a>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="ch-card mb-4">{{ empty_state('bi-calendar-check', 'No approved events to prepare', 'Events show up here once faculty approve them.') }}</div>
+{% endif %}
+{% if past %}
+<h2 class="mb-3">Past events</h2>
+<div class="ch-card"><ul class="ch-list">{% for e, r in past %}
+  <li class="ch-row"><div><a class="ch-table-title" href="{{ url_for('logistics.event', event_id=e.id) }}">{{ e.title }}</a><span class="ch-sub">{{ e.event_date|fmt_short_date }} &middot; {{ e.attended_count }} checked in</span></div>
+    <span class="ch-badge ch-badge-neutral">{{ r.percent }}% ready</span></li>
+{% endfor %}</ul></div>
+{% endif %}
+{% endblock %}

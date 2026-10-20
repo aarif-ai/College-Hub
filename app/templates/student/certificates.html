@@ -1,0 +1,28 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, empty_state %}
+{% block title %}Certificates{% endblock %}
+{% block content %}
+{% call page_header('My certificates', 'Certificates of participation for events you attended.') %}{% endcall %}
+{% if items %}
+<div class="row g-3">
+  {% for c in items %}
+  <div class="col-lg-6">
+    <div class="ch-card ch-cert h-100">
+      <span class="ch-cert-seal"><i class="bi bi-patch-check"></i></span>
+      <div class="flex-grow-1">
+        <strong>{{ c.event.title }}</strong>
+        <span class="ch-sub">{{ c.event.event_date|fmt_date }} &middot; issued {{ c.issued_at|fmt_short_date }}</span>
+        <span class="ch-sub ch-code">{{ c.cert_code }}</span>
+      </div>
+      <div class="d-grid gap-2">
+        <a class="btn btn-primary btn-sm" href="{{ url_for('student.certificate_download', cert_id=c.id) }}"><i class="bi bi-download me-1"></i>PDF</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.verify_certificate', code=c.cert_code) }}" target="_blank" rel="noopener">Verify</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="ch-card">{{ empty_state('bi-patch-check', 'No certificates yet', 'Attend an event and, once the organizer issues certificates, yours will appear here.', 'Explore events', url_for('main.events')) }}</div>
+{% endif %}
+{% endblock %}
