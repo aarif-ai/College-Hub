@@ -1,0 +1,40 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, empty_state, badge, post_button %}
+{% block title %}My registrations{% endblock %}
+{% block content %}
+{% call page_header('My registrations', 'Every event you have registered for, with your QR code and attendance.') %}
+  <a class="btn btn-primary" href="{{ url_for('main.events') }}">Find events</a>
+{% endcall %}
+<div class="ch-card">
+  {% if items %}
+  <div class="ch-table-wrap">
+    <table class="ch-table">
+      <thead><tr><th>Event</th><th>Date</th><th>Registration ID</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for r in items %}
+        <tr>
+          <td><a class="ch-table-title" href="{{ url_for('main.event_detail', event_id=r.event.id) }}">{{ r.event.title }}</a><span class="ch-sub">{{ r.event.venue }}</span></td>
+          <td>{{ r.event.event_date|fmt_short_date }}, {{ r.event.start_time|fmt_time }}</td>
+          <td><span class="ch-code">{{ r.reg_code }}</span></td>
+          <td>
+            {% if not r.is_confirmed %}{{ badge('Cancelled', 'danger') }}
+            {% elif r.attendance %}{{ badge('Attended', 'success', 'bi-check2') }}
+            {% elif r.event.is_past %}{{ badge('Missed', 'neutral') }}
+            {% else %}{{ badge('Confirmed', 'info') }}{% endif %}
+          </td>
+          <td class="text-end">
+            {% if r.is_confirmed %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('student.registration_detail', reg_id=r.id) }}">View</a>{% endif %}
+            {% if r.is_confirmed and not r.attendance and not r.event.is_past %}
+              {{ post_button(url_for('student.cancel', reg_id=r.id), 'Cancel', 'outline-danger', confirm='Cancel this registration? Your QR code will stop working.') }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state('bi-ticket-perforated', 'No registrations yet', 'When you register for an event it appears here with your QR code.', 'Explore events', url_for('main.events')) }}
+  {% endif %}
+</div>
+{% endblock %}

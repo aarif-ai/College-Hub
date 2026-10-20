@@ -1,0 +1,53 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, badge, post_button %}
+{% block title %}Registration {{ registration.reg_code }}{% endblock %}
+{% block content %}
+<nav class="small mb-3"><a class="ch-link" href="{{ url_for('student.registrations') }}"><i class="bi bi-arrow-left"></i> My registrations</a></nav>
+{% call page_header(registration.event.title, 'Show this QR code to the logistics team at the entrance.') %}
+  <a class="btn btn-outline-secondary" href="{{ url_for('main.event_detail', event_id=registration.event.id) }}">Event page</a>
+{% endcall %}
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ch-qr-card {{ 'ch-qr-cancelled' if not registration.is_confirmed }}">
+      {% if registration.is_confirmed %}
+        <img src="{{ url_for('student.qr_image', reg_id=registration.id) }}" alt="Your personal QR code for {{ registration.event.title }}" width="280" height="280">
+      {% else %}
+        <p class="ch-muted my-5">This registration was cancelled.</p>
+      {% endif %}
+      <div class="ch-reg-code">{{ registration.reg_code }}</div>
+      <div class="mt-2">
+        {% if not registration.is_confirmed %}{{ badge('Cancelled', 'danger') }}
+        {% elif registration.attendance %}{{ badge('Checked in ' ~ (registration.attendance.scanned_at|fmt_datetime), 'success', 'bi-check2-circle') }}
+        {% else %}{{ badge('Confirmed, not yet checked in', 'info') }}{% endif %}
+      </div>
+      <p class="small ch-muted mt-3 mb-0">Personal to you. Do not share this code.</p>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="ch-card ch-card-body mb-4">
+      <h2 class="mb-3">Registration details</h2>
+      <dl class="ch-kv">
+        <dt>Student</dt><dd>{{ registration.student.name }}</dd>
+        <dt>Registration ID</dt><dd class="ch-code">{{ registration.reg_code }}</dd>
+        <dt>Registered on</dt><dd>{{ registration.created_at|fmt_datetime }}</dd>
+        <dt>Status</dt><dd>{{ registration.status|capitalize }}</dd>
+        <dt>Event</dt><dd>{{ registration.event.title }}</dd>
+        <dt>Date</dt><dd>{{ registration.event.event_date|fmt_date }}</dd>
+        <dt>Time</dt><dd>{{ registration.event.start_time|fmt_time }} &ndash; {{ registration.event.end_time|fmt_time }}</dd>
+        <dt>Venue</dt><dd>{{ registration.event.venue }}</dd>
+      </dl>
+    </div>
+    {% if certificate %}
+    <div class="ch-card ch-cert mb-4">
+      <span class="ch-cert-seal"><i class="bi bi-patch-check"></i></span>
+      <div class="flex-grow-1"><strong>Certificate earned</strong><span class="ch-sub">{{ certificate.cert_code }}</span></div>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('student.certificate_download', cert_id=certificate.id) }}"><i class="bi bi-download me-1"></i>Download</a>
+    </div>
+    {% endif %}
+    {% if registration.is_confirmed and not registration.attendance and not registration.event.is_past %}
+      {{ post_button(url_for('student.cancel', reg_id=registration.id), 'Cancel registration', 'outline-danger', 'bi-x-circle', 'Cancel this registration? Your QR code will stop working.') }}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
