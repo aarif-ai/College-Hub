@@ -1,0 +1,93 @@
+{% from "components/macros.html" import csrf, account_badge %}
+{# Credential management card. Expects: account, role_name, manager_name, form, revealed, history, errors #}
+{% if not account %}
+<div class="ch-card ch-card-body">
+  <h2 class="mb-1">Create the {{ role_name }} account</h2>
+  <p class="ch-muted">There can only ever be one {{ role_name }} account. After it exists you can change its username, email and password, or deactivate it.</p>
+  <form method="post" novalidate>
+    {{ csrf() }}<input type="hidden" name="action" value="create">
+    <div class="row">
+      <div class="col-md-6 mb-3"><label class="form-label" for="c-username">Username</label><input class="form-control" id="c-username" name="username" value="{{ form.get('username','') }}" required pattern="[a-z][a-z0-9_]{2,29}" autocapitalize="none"><div class="form-text">Lowercase letters, numbers, underscores.</div></div>
+      <div class="col-md-6 mb-3"><label class="form-label" for="c-email">Email</label><input class="form-control" id="c-email" name="email" type="email" value="{{ form.get('email','') }}" required></div>
+      <div class="col-md-6 mb-3"><label class="form-label" for="c-name">Display name</label><input class="form-control" id="c-name" name="name" value="{{ form.get('name','') }}" maxlength="120" placeholder="Optional"></div>
+      <div class="col-md-6 mb-3"><label class="form-label" for="c-password">Initial password</label><input class="form-control" id="c-password" name="password" type="password" autocomplete="new-password" required><div class="form-text">At least 8 characters with a letter and a number.</div></div>
+    </div>
+    <button class="btn btn-primary" type="submit">Create {{ role_name }} account</button>
+  </form>
+</div>
+{% else %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="ch-card ch-card-body mb-4">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div><h2 class="mb-0">{{ account.name }}</h2><span class="ch-muted small">The one official {{ role_name }} account &middot; managed by {{ manager_name }}</span></div>
+        {{ account_badge(account) }}
+      </div>
+      <dl class="ch-kv mb-0">
+        <dt>Username</dt><dd>{{ account.username }}</dd>
+        <dt>Email</dt><dd>{{ account.email }}</dd>
+        <dt>Password last changed</dt><dd>{{ account.password_changed_at|fmt_datetime if account.password_changed_at else '—' }}</dd>
+        <dt>Must change password</dt><dd>{{ 'Yes, at next sign-in' if account.must_change_password else 'No' }}</dd>
+      </dl>
+    </div>
+
+    {% if revealed %}
+    <div class="ch-notice ch-notice-warning mb-4"><i class="bi bi-key"></i><div>
+      <h3>Temporary password (shown once)</h3>
+      <p class="mb-2">Give this to the {{ role_name }} account holder privately. They must choose their own password at the next sign-in. Do not refresh this page.</p>
+      <span class="ch-secret">{{ revealed }}</span></div></div>
+    {% endif %}
+
+    <div class="ch-card ch-card-body mb-4">
+      <h2 class="mb-3">Username and email</h2>
+      <form method="post" novalidate>
+        {{ csrf() }}<input type="hidden" name="action" value="details">
+        <div class="row">
+          <div class="col-md-6 mb-3"><label class="form-label" for="d-username">Username</label><input class="form-control" id="d-username" name="username" value="{{ form.get('username', account.username) if form.get('action') == 'details' else account.username }}" required pattern="[a-z][a-z0-9_]{2,29}" autocapitalize="none"></div>
+          <div class="col-md-6 mb-3"><label class="form-label" for="d-email">Email</label><input class="form-control" id="d-email" name="email" type="email" value="{{ form.get('email', account.email) if form.get('action') == 'details' else account.email }}" required></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Save</button>
+      </form>
+    </div>
+
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">Password</h2>
+      <form method="post" class="mb-4" novalidate>
+        {{ csrf() }}<input type="hidden" name="action" value="password">
+        <div class="row">
+          <div class="col-md-6 mb-3"><label class="form-label" for="p-new">New password</label><input class="form-control" id="p-new" name="new_password" type="password" autocomplete="new-password" required></div>
+          <div class="col-md-6 mb-3"><label class="form-label" for="p-confirm">Confirm</label><input class="form-control" id="p-confirm" name="confirm_password" type="password" autocomplete="new-password" required></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Set password</button>
+      </form>
+      <hr class="ch-rule">
+      <p class="small ch-muted">Forgot or lost? Generate a temporary password. The old password stops working immediately.</p>
+      <form method="post" data-confirm="Reset the {{ role_name }} password now? The current password will stop working.">
+        {{ csrf() }}<input type="hidden" name="action" value="reset">
+        <button class="btn btn-outline-danger" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Reset password</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="ch-card ch-card-body mb-4">
+      <h2 class="mb-2">Access</h2>
+      <p class="small ch-muted">{{ 'Deactivating signs the account out and blocks sign-in. You can reactivate it any time.' if account.account_status == 'ACTIVE' else 'This account cannot sign in right now.' }}</p>
+      {% if account.account_status == 'ACTIVE' %}
+      <form method="post" data-confirm="Deactivate the {{ role_name }} account? They will be signed out.">
+        {{ csrf() }}<input type="hidden" name="action" value="deactivate">
+        <button class="btn btn-outline-danger" type="submit">Deactivate {{ role_name }}</button></form>
+      {% else %}
+      <form method="post">{{ csrf() }}<input type="hidden" name="action" value="activate">
+        <button class="btn btn-success" type="submit">Activate {{ role_name }}</button></form>
+      {% endif %}
+    </div>
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">Recent changes</h2>
+      {% if history %}<ul class="list-unstyled mb-0">{% for h in history[:8] %}
+        <li class="mb-3"><strong>{{ h.label }}</strong><span class="ch-sub d-block">{{ h.created_at|fmt_datetime }}{% if h.actor %} &middot; by {{ h.actor.name }}{% endif %}</span></li>{% endfor %}</ul>
+      {% else %}<p class="ch-muted mb-0">No changes recorded yet.</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}

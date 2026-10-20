@@ -1,0 +1,28 @@
+{% extends "layouts/public.html" %}
+{% from "components/macros.html" import field, csrf %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<div class="ch-auth">
+  <div class="ch-auth-card">
+    <h1>Create your student account</h1>
+    <p class="ch-muted">After you sign up, complete your profile. The CollegeHub Organizing Committee will then verify you as a member.</p>
+    <form method="post" novalidate>
+      {{ csrf() }}
+      {{ field('username', 'Username', form.get('username',''), 'text', errors, true, 'firstname.lastname', autocomplete='username',
+               attrs='autocapitalize="none" spellcheck="false" maxlength="50" pattern="[a-z]{2,24}\\.[a-z]{2,24}(0[1-9]|[1-9][0-9])?"') }}
+      <div class="form-text mt-n2 mb-3" style="margin-top:-.6rem">
+        Username format: <span class="ch-username-hint">firstname.lastname</span> &middot; example: <span class="ch-username-hint">rahul.sharma</span>.
+        Lowercase letters only. If the name is taken, add a number: <span class="ch-username-hint">rahul.sharma01</span>.
+      </div>
+      {{ field('email', 'Email', form.get('email',''), 'email', errors, true, autocomplete='email') }}
+      <div class="row">
+        <div class="col-md-6">{{ field('password', 'Password', '', 'password', errors, true, help='At least 8 characters with a letter and a number.', autocomplete='new-password') }}</div>
+        <div class="col-md-6">{{ field('confirm_password', 'Confirm password', '', 'password', errors, true, autocomplete='new-password') }}</div>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Create account</button>
+    </form>
+    <p class="small ch-muted text-center mt-3 mb-0">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+    <p class="small ch-muted text-center mt-2 mb-0">Organizer, logistics and faculty accounts are created by the institution, not here.</p>
+  </div>
+</div>
+{% endblock %}
