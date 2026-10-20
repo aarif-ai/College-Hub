@@ -1,0 +1,58 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, status_badge, meter, csrf, empty_state, stat_card %}
+{% block title %}{{ event.title }} · Logistics{% endblock %}
+{% block content %}
+<nav class="small mb-3"><a class="ch-link" href="{{ url_for('logistics.dashboard') }}"><i class="bi bi-arrow-left"></i> Logistics</a></nav>
+{% call page_header(event.title, event.event_date|fmt_date ~ ' · ' ~ event.start_time|fmt_time ~ ' · ' ~ event.venue) %}
+  {{ status_badge(event.status) }}
+  {% if event.status == 'published' %}<a class="btn btn-primary" href="{{ url_for('logistics.scanner', event_id=event.id) }}"><i class="bi bi-qr-code-scan me-1"></i>Open QR scanner</a>{% endif %}
+{% endcall %}
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6"><div class="ch-card ch-card-body h-100">{{ meter(readiness.percent, 'Event readiness', 'good' if readiness.percent == 100 else '') }}
+    <p class="small ch-muted mt-2 mb-0">{{ readiness.completed }} completed &middot; {{ readiness.in_progress }} in progress &middot; {{ readiness.pending }} pending</p></div></div>
+  <div class="col-6 col-lg-3">{{ stat_card('Registered', event.registered_count ~ ' / ' ~ event.capacity, 'bi-ticket-perforated') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Checked in', event.attended_count, 'bi-qr-code-scan', tone='good') }}</div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="ch-card mb-4">
+      <div class="ch-card-head"><h2>Event day checklist</h2></div>
+      {% if event.tasks %}
+      <div class="ch-table-wrap"><table class="ch-table">
+        <thead><tr><th>Task</th><th>Assigned to</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+        <tbody>{% for t in event.tasks %}
+          <tr>
+            <td><form method="post" action="{{ url_for('logistics.task_update', task_id=t.id) }}" id="t{{ t.id }}">{{ csrf() }}</form><strong>{{ t.title }}</strong><span class="ch-sub">{{ t.area }} &middot; updated {{ t.updated_at|fmt_short_date }}</span></td>
+            <td><input class="form-control form-control-sm" form="t{{ t.id }}" name="assigned_to" value="{{ t.assigned_to or '' }}" aria-label="Assigned to"></td>
+            <td><select class="form-select form-select-sm" form="t{{ t.id }}" name="status" aria-label="Status for {{ t.title }}">{% for v, l in C.TASK_STATUS_OPTIONS %}<option value="{{ v }}" {{ 'selected' if v == t.status }}>{{ l }}</option>{% endfor %}</select></td>
+            <td><input class="form-control form-control-sm" form="t{{ t.id }}" name="notes" value="{{ t.notes or '' }}" aria-label="Notes"></td>
+            <td class="text-end"><button class="btn btn-outline-secondary btn-sm" form="t{{ t.id }}" type="submit">Save</button></td>
+          </tr>
+        {% endfor %}</tbody></table></div>
+      {% else %}{{ empty_state('bi-clipboard', 'No tasks yet') }}{% endif %}
+    </div>
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">Add a task</h2>
+      <form method="post" action="{{ url_for('logistics.task_create', event_id=event.id) }}" class="row g-2">
+        {{ csrf() }}
+        <div class="col-md-5"><input class="form-control" name="title" placeholder="Task title" required minlength="3" aria-label="Task title"></div>
+        <div class="col-md-3"><input class="form-control" name="area" list="areas" placeholder="Area" aria-label="Area"><datalist id="areas">{% for a in areas %}<option value="{{ a }}">{% endfor %}</datalist></div>
+        <div class="col-md-2"><input class="form-control" name="assigned_to" placeholder="Assigned to" aria-label="Assigned to"></div>
+        <div class="col-md-2 d-grid"><button class="btn btn-primary" type="submit">Add</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="ch-card mb-4">
+      <div class="ch-card-head"><h2>Approved volunteers</h2></div>
+      {% if volunteers %}<ul class="ch-list">{% for v in volunteers %}<li><strong class="small">{{ v.student.name }}</strong><span class="ch-sub">{{ v.opportunity.title }}</span></li>{% endfor %}</ul>
+      {% else %}<div class="ch-card-body ch-muted small">No approved volunteers yet.</div>{% endif %}
+    </div>
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">Venue and timing</h2>
+      <dl class="ch-kv"><dt>Venue</dt><dd>{{ event.venue }}</dd><dt>Start</dt><dd>{{ event.start_time|fmt_time }}</dd><dt>End</dt><dd>{{ event.end_time|fmt_time }}</dd><dt>Organizer</dt><dd>{{ event.organizer.name }}</dd></dl>
+      {% for d in event.documents %}<a class="btn btn-outline-secondary btn-sm mt-2" href="{{ url_for('main.document_download', document_id=d.id) }}"><i class="bi bi-file-earmark-pdf me-1"></i>{{ d.original_filename|truncate(24) }}</a>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

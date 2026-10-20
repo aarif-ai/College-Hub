@@ -1,0 +1,49 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, status_badge %}
+{% block title %}QR scanner · {{ event.title }}{% endblock %}
+{% block head %}<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>{% endblock %}
+{% block content %}
+<nav class="small mb-3"><a class="ch-link" href="{{ url_for('logistics.event', event_id=event.id) }}"><i class="bi bi-arrow-left"></i> {{ event.title }}</a></nav>
+{% call page_header('QR attendance scanner', event.title ~ ' · ' ~ event.event_date|fmt_date ~ ' · ' ~ event.venue) %}{% endcall %}
+
+<div data-scanner data-scan-url="{{ url_for('logistics.scan') }}" data-event-id="{{ event.id }}">
+  <div class="row g-3 mb-4">
+    <div class="col-6">{{ stat_card('Checked in', event.attended_count, 'bi-person-check', tone='good', value_id='count-attended') }}</div>
+    <div class="col-6">{{ stat_card('Registered', event.registered_count, 'bi-ticket-perforated', value_id='count-registered') }}</div>
+  </div>
+
+  <div class="ch-scanner">
+    <div>
+      <div class="ch-viewfinder mb-3">
+        <div id="reader"></div>
+        <div class="ch-viewfinder-idle" id="viewfinder-idle"><i class="bi bi-camera-video"></i><p class="mb-0">Camera is off. Press Start scanning.</p></div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <button class="btn btn-primary" id="scan-start" type="button"><i class="bi bi-camera me-1"></i>Start scanning</button>
+        <button class="btn btn-outline-secondary d-none" id="scan-stop" type="button"><i class="bi bi-stop-circle me-1"></i>Stop camera</button>
+      </div>
+      <form id="manual-form" class="ch-card ch-card-body" data-no-loading autocomplete="off">
+        <label class="form-label" for="manual-value">Manual entry (if a camera is not available)</label>
+        <div class="d-flex gap-2">
+          <input class="form-control ch-code" id="manual-value" placeholder="CH-2026-004-7K2QX" maxlength="60">
+          <button class="btn btn-outline-secondary" type="submit">Check in</button>
+        </div>
+      </form>
+    </div>
+    <div>
+      <div id="scan-result" class="ch-result state-idle mb-4" aria-live="assertive"></div>
+      <div class="ch-card">
+        <div class="ch-card-head"><h2>Recent check-ins</h2></div>
+        <ul class="ch-list" id="recent-scans">
+          {% for a in recent %}
+          <li class="ch-row"><div><strong>{{ a.student.name }}</strong><span class="ch-sub ch-code">{{ a.registration.reg_code }}</span></div><span class="ch-badge ch-badge-success">{{ a.scanned_at|fmt_datetime }}</span></li>
+          {% else %}
+          <li class="ch-muted small" id="recent-empty">No check-ins yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>{% endblock %}

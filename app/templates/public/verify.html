@@ -1,0 +1,27 @@
+{% extends "layouts/public.html" %}
+{% block title %}Verify certificate{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="ch-card ch-card-body ch-verify {{ 'ch-verify-ok' if certificate else 'ch-verify-bad' }}">
+    {% if certificate %}
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <span class="ch-cert-seal"><i class="bi bi-patch-check-fill"></i></span>
+        <div><h1 class="mb-0 fs-3">Certificate verified</h1><span class="ch-muted small">Issued by CollegeHub</span></div>
+      </div>
+      <dl class="ch-kv">
+        <dt>Certificate ID</dt><dd class="ch-code">{{ certificate.cert_code }}</dd>
+        <dt>Awarded to</dt><dd>{{ certificate.student.name }}</dd>
+        <dt>Event</dt><dd>{{ certificate.event.title }}</dd>
+        <dt>Event date</dt><dd>{{ certificate.event.event_date|fmt_date }}</dd>
+        <dt>Issued on</dt><dd>{{ certificate.issued_at|fmt_date }}</dd>
+      </dl>
+    {% else %}
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-x-octagon-fill text-danger fs-1"></i>
+        <div><h1 class="mb-0 fs-3">Certificate not found</h1><span class="ch-muted small">No certificate matches this ID.</span></div>
+      </div>
+      <p class="mb-0 ch-muted">Check the ID printed on the certificate. Code entered: <span class="ch-code">{{ code[:40] }}</span></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
