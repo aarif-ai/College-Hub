@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body %}
+{% include "partials/_navbar_public.html" %}
+<main id="main">
+  {% include "partials/_flash.html" %}
+  {% block content %}{% endblock %}
+</main>
+{% include "partials/_footer.html" %}
+{% endblock %}

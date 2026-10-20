@@ -1,0 +1,74 @@
+{% from "components/macros.html" import brand %}
+{% from "components/macros.html" import avatar, verified_badge %}
+{% macro nav_item(endpoint, icon, label, match=[], badge=0) %}
+  {% set active = request.endpoint == endpoint or request.endpoint in match %}
+  <li>
+    <a class="ch-nav-link{{ ' active' if active }}" href="{{ url_for(endpoint) }}"
+       {% if active %}aria-current="page"{% endif %}>
+      <i class="bi {{ icon }}" aria-hidden="true"></i><span>{{ label }}</span>
+      {% if badge %}<span class="ch-nav-badge">{{ badge }}</span>{% endif %}
+    </a>
+  </li>
+{% endmacro %}
+
+<aside class="ch-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="chSidebar"
+       aria-label="Sidebar navigation">
+  <div class="ch-sidebar-inner">
+    <div class="ch-sidebar-head">
+      <a href="{{ url_for('main.landing') }}" aria-label="CollegeHub home">{{ brand(light=true) }}</a>
+      <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas"
+              data-bs-target="#chSidebar" aria-label="Close menu"></button>
+    </div>
+
+    <div class="ch-role-chip"><i class="bi bi-person-badge" aria-hidden="true"></i>{{ current_user.role_label }}</div>
+
+    <nav class="ch-nav" aria-label="{{ current_user.role_label }} menu">
+      <ul class="list-unstyled mb-0">
+      {% if current_user.role == 'student' %}
+        {{ nav_item('student.dashboard', 'bi-grid-1x2', 'Dashboard') }}
+        {{ nav_item('main.events', 'bi-compass', 'Explore events', ['main.event_detail']) }}
+        {{ nav_item('student.registrations', 'bi-ticket-perforated', 'My registrations', ['student.registration_detail']) }}
+        {{ nav_item('student.assistant', 'bi-chat-square-text', 'AI Event Assistant') }}
+        {{ nav_item('student.certificates', 'bi-patch-check', 'Certificates') }}
+        {{ nav_item('student.announcements', 'bi-megaphone', 'Announcements') }}
+        {{ nav_item('student.volunteering_page', 'bi-hand-thumbs-up', 'Volunteering') }}
+        {{ nav_item('student.history', 'bi-clock-history', 'Participation history') }}
+        {{ nav_item('student.profile', 'bi-person-circle', 'Profile & achievements') }}
+      {% elif current_user.role == 'organizer' %}
+        {{ nav_item('organizer.dashboard', 'bi-grid-1x2', 'Dashboard') }}
+        {{ nav_item('organizer.events', 'bi-calendar-event', 'My events', ['organizer.event_manage', 'organizer.event_edit']) }}
+        {{ nav_item('organizer.event_new', 'bi-plus-circle', 'Create event') }}
+        {{ nav_item('organizer.members', 'bi-patch-check', 'Member verification', ['organizer.member_detail'], badge=pending_members) }}
+        {{ nav_item('organizer.logistics_account', 'bi-key', 'Logistics account') }}
+        {{ nav_item('organizer.analytics_page', 'bi-bar-chart-line', 'Analytics') }}
+        {{ nav_item('main.events', 'bi-compass', 'Public events') }}
+      {% elif current_user.role == 'faculty' %}
+        {{ nav_item('faculty.dashboard', 'bi-grid-1x2', 'Dashboard') }}
+        {{ nav_item('faculty.proposals', 'bi-inbox', 'Event proposals', ['faculty.review'], badge=pending_proposals) }}
+        {{ nav_item('faculty.monitor', 'bi-activity', 'Monitor events', ['faculty.report']) }}
+        {{ nav_item('faculty.announcements', 'bi-megaphone', 'Announcements') }}
+        {{ nav_item('faculty.clubs', 'bi-people', 'Clubs & activity') }}
+        {{ nav_item('faculty.organizer_account', 'bi-key', 'Organizer account') }}
+      {% elif current_user.role == 'logistics' %}
+        {{ nav_item('logistics.dashboard', 'bi-grid-1x2', 'Dashboard', ['logistics.event', 'logistics.scanner']) }}
+        {{ nav_item('main.events', 'bi-compass', 'Public events') }}
+      {% endif %}
+        {{ nav_item('main.notifications', 'bi-bell', 'Notifications', badge=unread_notifications) }}
+      </ul>
+    </nav>
+
+    <div class="ch-sidebar-foot">
+      <div class="ch-user">
+        {{ avatar(current_user) }}
+        <div class="ch-user-text">
+          <strong>{{ current_user.name }}{{ verified_badge(current_user) }}</strong>
+          <span>@{{ current_user.username }}</span>
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm ch-btn-sidebar w-100" type="submit"><i class="bi bi-box-arrow-right me-1"></i>Sign out</button>
+      </form>
+    </div>
+  </div>
+</aside>

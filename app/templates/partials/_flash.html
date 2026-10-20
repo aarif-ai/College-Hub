@@ -1,0 +1,15 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="ch-flash-stack" role="region" aria-label="Notifications">
+    {% for category, message in messages %}
+      {% set cls = {'success': 'success', 'danger': 'danger', 'warning': 'warning', 'info': 'info', 'error': 'danger'}.get(category, 'info') %}
+      {% set icon = {'success': 'bi-check-circle-fill', 'danger': 'bi-exclamation-octagon-fill', 'warning': 'bi-exclamation-triangle-fill', 'info': 'bi-info-circle-fill'}[cls] %}
+      <div class="alert alert-{{ cls }} ch-alert d-flex align-items-start gap-2 alert-dismissible fade show" role="{{ 'alert' if cls in ('danger','warning') else 'status' }}">
+        <i class="bi {{ icon }} ch-alert-icon" aria-hidden="true"></i>
+        <div class="flex-grow-1">{{ message }}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}

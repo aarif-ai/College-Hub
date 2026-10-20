@@ -1,0 +1,27 @@
+{% from "components/macros.html" import verified_badge, verification_badge, avatar %}
+{# Shared by the student's own profile page and the Organizer's review page. #}
+<div class="ch-card ch-card-body">
+  <div class="ch-profile-hero mb-4">
+    {{ avatar(person, 'lg') }}
+    <div>
+      <h2>{{ person.name }}{{ verified_badge(person) }}</h2>
+      <div class="handle">@{{ person.username }}</div>
+      <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+        {{ verification_badge(person) }}
+        {% if person.is_verified %}<span class="ch-verified-text">Verified CollegeHub Member</span>{% endif %}
+      </div>
+    </div>
+  </div>
+  <dl class="ch-kv mb-0">
+    <dt>Department</dt><dd>{{ person.department or '—' }}</dd>
+    <dt>Branch</dt><dd>{{ profile.branch or '—' }}</dd>
+    <dt>Semester</dt><dd>{{ profile.semester or '—' }}{% if profile.section %} &middot; Section {{ profile.section }}{% endif %}</dd>
+    <dt>Email</dt><dd>{{ person.email }}</dd>
+    <dt>Phone</dt><dd>{{ profile.phone or '—' }}</dd>
+    <dt>Student ID</dt><dd>{{ profile.enrollment_no or 'Not provided (optional)' }}</dd>
+    <dt>Skills</dt><dd>{% if profile.skill_list %}<ul class="ch-chip-list">{% for x in profile.skill_list %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}—{% endif %}</dd>
+    <dt>Interests</dt><dd>{% if profile.interest_list %}<ul class="ch-chip-list">{% for x in profile.interest_list %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}—{% endif %}</dd>
+    <dt>About</dt><dd>{{ profile.bio or '—' }}</dd>
+    <dt>Links</dt><dd>{% if profile.links %}{% for label, url in profile.links %}<a href="{{ url }}" target="_blank" rel="noopener noreferrer nofollow">{{ label }}</a>{{ ' · ' if not loop.last }}{% endfor %}{% else %}—{% endif %}</dd>
+  </dl>
+</div>

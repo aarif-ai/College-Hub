@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block body_class %}ch-app{% endblock %}
+{% block body %}
+<div class="ch-shell">
+  {% include "partials/_sidebar.html" %}
+  <div class="ch-main">
+    {% include "partials/_topbar.html" %}
+    <main class="ch-content" id="main">
+      {% include "partials/_flash.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
