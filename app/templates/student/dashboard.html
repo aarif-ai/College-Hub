@@ -1,0 +1,85 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, section_title, empty_state, event_card, meter, csrf %}
+{% block title %}Student dashboard{% endblock %}
+{% block content %}
+{% call page_header('Hello, ' ~ current_user.short_name, 'Here is what is happening with your events.') %}
+  <a class="btn btn-primary" href="{{ url_for('main.events') }}"><i class="bi bi-compass me-1"></i>Explore events</a>
+{% endcall %}
+
+{% if not current_user.is_verified %}
+<div class="ch-notice ch-notice-warning mb-4"><i class="bi bi-hourglass-split"></i><div>
+  <h3>{{ 'Changes requested on your profile' if current_user.verification_status == 'REJECTED' else 'Verification Pending' }}</h3>
+  <p>{% if current_user.verification_status == 'REJECTED' %}{{ current_user.verification_reason }}{% else %}Your profile is waiting for review by the CollegeHub Organizing Committee.{% endif %}
+    Event registration, volunteering and certificates unlock once you are verified.</p>
+  <a class="small" href="{{ url_for('student.profile') }}#verification">View status{% if not current_user.profile or not current_user.profile.is_complete %} and complete your profile{% endif %}</a></div></div>
+{% endif %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">{{ stat_card('Registered events', stats.registered, 'bi-ticket-perforated', href=url_for('student.registrations')) }}</div>
+  <div class="col-6 col-xl-3">{{ stat_card('Events attended', stats.attended, 'bi-qr-code-scan', hint=stats.attendance_rate ~ '% attendance', tone='good') }}</div>
+  <div class="col-6 col-xl-3">{{ stat_card('Certificates', stats.certificates, 'bi-patch-check', href=url_for('student.certificates'), tone='gold') }}</div>
+  <div class="col-6 col-xl-3">{{ stat_card('Achievements', stats.achievements, 'bi-award', href=url_for('student.profile')) }}</div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    {{ section_title('My upcoming events', 'All registrations', url_for('student.registrations')) }}
+    <div class="ch-card mb-4">
+      {% if upcoming_regs %}
+      <ul class="ch-list">
+        {% for r in upcoming_regs %}
+        <li class="ch-row">
+          <div class="d-flex gap-3 align-items-center">
+            <div class="ch-datebox"><span class="m">{{ r.event.event_date.strftime('%b') }}</span><span class="d">{{ r.event.event_date.strftime('%d') }}</span></div>
+            <div><a class="ch-table-title" href="{{ url_for('main.event_detail', event_id=r.event.id) }}">{{ r.event.title }}</a>
+              <span class="ch-sub">{{ r.event.start_time|fmt_time }} &middot; {{ r.event.venue }}</span></div>
+          </div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('student.registration_detail', reg_id=r.id) }}"><i class="bi bi-qr-code me-1"></i>QR code</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        {{ empty_state('bi-calendar-plus', 'No upcoming registrations', 'Find an event that interests you and register in a few clicks.', 'Explore events', url_for('main.events')) }}
+      {% endif %}
+    </div>
+
+    {{ section_title('Suggested for you', 'Browse all', url_for('main.events')) }}
+    {% if suggested %}
+      <div class="row g-3">{% for e in suggested %}<div class="col-md-6 col-xl-4">{{ event_card(e) }}</div>{% endfor %}</div>
+    {% else %}
+      <div class="ch-card">{{ empty_state('bi-stars', 'You have seen everything open right now', 'New events appear here as soon as they are published.') }}</div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-4">
+    {{ section_title('Announcements', 'View all', url_for('student.announcements')) }}
+    <div class="ch-card mb-4">
+      {% if announcements %}
+      <ul class="ch-list">{% for a in announcements %}
+        <li><strong class="small">{{ a.title }}</strong><span class="ch-sub">{{ a.created_at|fmt_datetime }}{% if a.event %} &middot; {{ a.event.title }}{% endif %}</span></li>
+      {% endfor %}</ul>
+      {% else %}{{ empty_state('bi-megaphone', 'No announcements', 'Updates from faculty and organizers show up here.') }}{% endif %}
+    </div>
+
+    {{ section_title('Volunteer opportunities', 'See all', url_for('student.volunteering_page')) }}
+    <div class="ch-card mb-4">
+      {% if opportunities %}
+      <ul class="ch-list">{% for o in opportunities %}
+        <li><strong class="small">{{ o.title }}</strong>
+          <span class="ch-sub">{{ o.event.title if o.event else 'General' }}</span>
+          {% if o.id in applied_ids %}<span class="ch-badge ch-badge-success mt-1">Applied</span>{% endif %}</li>
+      {% endfor %}</ul>
+      {% else %}{{ empty_state('bi-hand-thumbs-up', 'Nothing open right now') }}{% endif %}
+    </div>
+
+    {{ section_title('Recent achievements', 'Profile', url_for('student.profile')) }}
+    <div class="ch-card ch-card-body">
+      {% if recent_achievements %}
+        <div class="d-grid gap-3">{% for ua in recent_achievements %}
+          <div class="d-flex gap-3 align-items-center"><span class="ch-stat-icon ch-stat-gold" style="background:var(--ch-gold-soft);color:var(--ch-gold)"><i class="bi {{ ua.achievement.icon }}"></i></span>
+            <div><strong class="small d-block">{{ ua.achievement.title }}</strong><span class="ch-sub">{{ ua.achievement.description }}</span></div></div>
+        {% endfor %}</div>
+      {% else %}<p class="ch-muted small mb-0">Register for an event to unlock your first achievement.</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

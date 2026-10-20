@@ -1,0 +1,57 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, post_button %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+{% call page_header('My profile', 'Your details, verification status and achievements.') %}
+  <a class="btn btn-primary" href="{{ url_for('student.profile_edit') }}"><i class="bi bi-pencil me-1"></i>Edit profile</a>
+  <a class="btn btn-outline-secondary" href="{{ url_for('auth.change_password') }}"><i class="bi bi-key me-1"></i>Change password</a>
+  <a class="btn btn-outline-secondary" href="#verification"><i class="bi bi-patch-check me-1"></i>Verification status</a>
+{% endcall %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <section id="verification" class="mb-4" aria-label="Verification status">
+      {% if current_user.verification_status == 'VERIFIED' %}
+      <div class="ch-notice ch-notice-success"><i class="bi bi-patch-check-fill"></i><div>
+        <h3>Verified CollegeHub Member</h3>
+        <p>Verified{% if current_user.verified_at %} on {{ current_user.verified_at|fmt_date }}{% endif %} by the CollegeHub Organizing Committee. You can register for events, volunteer and receive certificates.</p></div></div>
+      {% elif current_user.verification_status == 'REJECTED' %}
+      <div class="ch-notice ch-notice-danger"><i class="bi bi-exclamation-octagon"></i><div>
+        <h3>{{ 'Changes requested' if current_user.correction_requested else 'Verification not approved' }}</h3>
+        <p><strong>Reason:</strong> {{ current_user.verification_reason or 'No reason was recorded.' }}</p>
+        <p class="mt-2">Update your profile, then send it back for review.</p>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('student.profile_edit') }}">Edit profile</a>
+          {{ post_button(url_for('student.verification_resubmit'), 'Resubmit for verification', 'primary', 'bi-send') }}
+        </div></div></div>
+      {% else %}
+      <div class="ch-notice ch-notice-warning"><i class="bi bi-hourglass-split"></i><div>
+        <h3>Verification Pending</h3>
+        <p>Your profile is waiting for review by the CollegeHub Organizing Committee.
+        {% if not profile.is_complete %}<br>Tip: complete your department, branch, semester, phone and bio so the review is quick.{% endif %}</p>
+        <p class="mt-2">Until you are verified you can browse events and announcements, but registration, volunteering and certificates are locked.</p></div></div>
+      {% endif %}
+    </section>
+    {% set person = current_user %}
+    {% include "partials/_profile_summary.html" %}
+  </div>
+  <div class="col-lg-5">
+    <div class="row g-3 mb-4">
+      <div class="col-6">{{ stat_card('Events attended', stats.attended, 'bi-qr-code-scan', tone='good') }}</div>
+      <div class="col-6">{{ stat_card('Certificates', stats.certificates, 'bi-patch-check', tone='gold') }}</div>
+    </div>
+    <h2 class="mb-3">Achievements <span class="ch-muted fs-6">({{ earned|length }}/{{ all_achievements|length }})</span></h2>
+    <div class="row g-3">
+      {% for a in all_achievements %}
+      <div class="col-sm-6 col-lg-12 col-xl-6">
+        <div class="ch-achievement {{ '' if a.id in earned else 'locked' }}">
+          <span class="ico"><i class="bi {{ a.icon if a.id in earned else 'bi-lock' }}"></i></span>
+          <div><h3>{{ a.title }}</h3><p>{{ a.description }}</p>
+            {% if a.id in earned %}<p class="mt-1 text-success">Unlocked {{ earned[a.id].awarded_at|fmt_short_date }}</p>{% endif %}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

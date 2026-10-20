@@ -1,0 +1,61 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, field, textarea_field, select_field, csrf, avatar %}
+{% block title %}Edit profile{% endblock %}
+{% block content %}
+{% call page_header('Edit profile', 'Update the details the Organizing Committee reviews. Role and verification can only be changed by the committee.') %}
+  <a class="btn btn-outline-secondary" href="{{ url_for('student.profile') }}">Cancel</a>
+{% endcall %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {{ csrf() }}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="ch-card ch-card-body mb-4">
+        <h2 class="mb-3">About you</h2>
+        {{ field('name', 'Full name', form.name, 'text', errors, true, autocomplete='name') }}
+        <div class="row">
+          <div class="col-md-6"><div class="mb-3"><label class="form-label">Username</label><input class="form-control" value="{{ current_user.username }}" disabled><div class="form-text">Usernames cannot be changed.</div></div></div>
+          <div class="col-md-6"><div class="mb-3"><label class="form-label">Email</label><input class="form-control" value="{{ current_user.email }}" disabled><div class="form-text">Your email is used to sign in.</div></div></div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">{{ field('phone', 'Phone number', form.phone, 'tel', errors, false, '+91 98765 43210', autocomplete='tel') }}</div>
+          <div class="col-md-6">{{ field('enrollment_no', 'Student ID / enrollment number (optional)', form.enrollment_no, 'text', errors) }}</div>
+        </div>
+        {{ textarea_field('bio', 'Short bio', form.bio, errors, rows=3, maxlength=600, help='A sentence or two about you. Up to 600 characters.') }}
+      </div>
+      <div class="ch-card ch-card-body mb-4">
+        <h2 class="mb-3">Studies</h2>
+        {{ select_field('department', 'Department', C.DEPARTMENT_OPTIONS, form.department, errors, true) }}
+        <div class="row">
+          <div class="col-md-5">{{ select_field('branch', 'Branch', C.BRANCH_OPTIONS, form.branch, errors) }}</div>
+          <div class="col-md-4">{{ select_field('semester', 'Semester', C.SEMESTER_OPTIONS, form.semester, errors) }}</div>
+          <div class="col-md-3">{{ field('section', 'Section', form.section, 'text', errors, attrs='maxlength="10"') }}</div>
+        </div>
+        {{ field('skills', 'Skills', form.skills, 'text', errors, placeholder='Python, public speaking, video editing', help='Separate with commas.') }}
+        {{ field('interests', 'Interests', form.interests, 'text', errors, placeholder='AI, debating, football', help='Separate with commas.') }}
+      </div>
+      <div class="ch-card ch-card-body">
+        <h2 class="mb-3">Links <span class="ch-muted fs-6">(optional)</span></h2>
+        {{ field('github_url', 'GitHub', form.github_url, 'url', errors, placeholder='https://github.com/your-name') }}
+        {{ field('linkedin_url', 'LinkedIn', form.linkedin_url, 'url', errors, placeholder='https://www.linkedin.com/in/your-name') }}
+        {{ field('portfolio_url', 'Portfolio / website', form.portfolio_url, 'url', errors, placeholder='https://') }}
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="ch-card ch-card-body">
+        <h2 class="mb-3">Profile photo</h2>
+        <div class="mb-3">{{ avatar(current_user, 'lg') }}</div>
+        <div class="mb-3">
+          <label for="f-photo" class="form-label">Upload a photo</label>
+          <input class="form-control{{ ' is-invalid' if errors.get('photo') }}" type="file" id="f-photo" name="photo" accept="image/png,image/jpeg,image/webp">
+          {% if errors.get('photo') %}<div class="invalid-feedback">{{ errors.photo }}</div>{% endif %}
+          <div class="form-text">PNG, JPG or WEBP up to 2 MB. It is cropped to a square.</div>
+        </div>
+        {% if profile.photo %}
+        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="remove_photo" name="remove_photo" value="1"><label class="form-check-label small" for="remove_photo">Remove current photo</label></div>
+        {% endif %}
+        <button class="btn btn-primary w-100" type="submit">Save profile</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

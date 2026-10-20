@@ -1,0 +1,243 @@
+{% extends "layouts/public.html" %}
+{% from "components/macros.html" import event_card, empty_state %}
+{% block title %}College events, from proposal to certificate{% endblock %}
+
+{% block content %}
+<section class="ch-hero">
+  <div class="container">
+    <div class="row align-items-center g-4 gx-lg-5">
+      <div class="col-lg-7">
+        <span class="ch-eyebrow">College Event, Engagement &amp; Operations Platform</span>
+        <h1 class="ch-display mt-2">The whole life of a college event, in one place.</h1>
+        <p class="ch-lead">
+          CollegeHub takes an event from proposal and faculty approval to registration,
+          QR attendance, logistics and certificates, and connects students with volunteering,
+          achievements and a document-grounded AI assistant.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-primary btn-lg" href="{{ url_for('main.events') }}"><i class="bi bi-compass me-2"></i>Explore events</a>
+          {% if current_user.is_authenticated %}
+            <a class="btn btn-outline-secondary btn-lg" href="{{ url_for(home_endpoint(current_user)) }}">Open dashboard</a>
+          {% else %}
+            <a class="btn btn-outline-secondary btn-lg" href="{{ url_for('auth.login') }}">Log in</a>
+          {% endif %}
+        </div>
+        <ul class="list-inline mt-4 mb-0 ch-muted small">
+          <li class="list-inline-item me-3"><i class="bi bi-check2-circle text-success me-1"></i>Faculty-approved events</li>
+          <li class="list-inline-item me-3"><i class="bi bi-check2-circle text-success me-1"></i>Tamper-proof QR check-in</li>
+          <li class="list-inline-item"><i class="bi bi-check2-circle text-success me-1"></i>AI that never guesses</li>
+        </ul>
+      </div>
+      <div class="col-lg-5">
+        <div class="ch-pass" aria-label="Sample registration pass">
+          <div class="ch-pass-top">
+            <small>Sample registration pass</small>
+            <h3>Your event, your QR code</h3>
+          </div>
+          <div class="ch-pass-body">
+            <div class="ch-pass-qr" aria-hidden="true"><i class="bi bi-qr-code"></i></div>
+            <div class="ch-pass-code">CH-2026-004-7K2QX</div>
+            <div class="ch-pass-ok"><i class="bi bi-patch-check-fill"></i>Verified by the server at the door</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ch-band" id="upcoming">
+  <div class="container">
+    <div class="ch-section-title">
+      <h2 class="fs-4">Upcoming events</h2>
+      <a href="{{ url_for('main.events') }}" class="ch-link">See all events <i class="bi bi-arrow-right"></i></a>
+    </div>
+    {% if upcoming %}
+      <div class="row g-4">
+        {% for event in upcoming %}
+          <div class="col-md-6 col-lg-4">{{ event_card(event) }}</div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="ch-card">{{ empty_state('bi-calendar-event', 'No upcoming events yet', 'Published events will appear here as soon as organizers get faculty approval.') }}</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="ch-band ch-band-alt">
+  <div class="container">
+    <div class="row g-4 gx-lg-5">
+      <div class="col-lg-6">
+        <div class="ch-band-head mb-4">
+          <span class="ch-eyebrow">Communities</span>
+          <h2>Featured clubs and communities</h2>
+          <p>Every event belongs to a community, so faculty can see how student activity is growing.</p>
+        </div>
+        {% if clubs %}
+        <div class="row g-3">
+          {% for club in clubs %}
+            <div class="col-sm-6">
+              <div class="ch-club"><span class="ico"><i class="bi {{ club.icon or 'bi-people' }}"></i></span>
+                <div><h3>{{ club.name }}</h3><p>{{ club.category or 'Student community' }}</p></div></div>
+            </div>
+          {% endfor %}
+        </div>
+        {% else %}
+          <p class="ch-muted">Clubs will be listed here once they are added.</p>
+        {% endif %}
+      </div>
+      <div class="col-lg-6">
+        <div class="ch-band-head mb-4">
+          <span class="ch-eyebrow">Opportunities</span>
+          <h2>Volunteer and grow</h2>
+          <p>Students can apply to help run events, build experience and unlock achievements.</p>
+        </div>
+        {% if opportunities %}
+          <div class="ch-card"><ul class="ch-list">
+            {% for opp in opportunities %}
+              <li class="ch-row">
+                <div><strong>{{ opp.title }}</strong>
+                  <span class="ch-sub">{{ opp.event.title if opp.event else 'General opportunity' }} &middot; {{ opp.slots_left }} slot{{ '' if opp.slots_left == 1 else 's' }} left</span></div>
+                <a class="ch-link" href="{{ url_for('student.volunteering_page') }}">Apply</a>
+              </li>
+            {% endfor %}
+          </ul></div>
+        {% else %}
+          <div class="ch-card">{{ empty_state('bi-hand-thumbs-up', 'No open opportunities right now', 'New volunteer roles appear when organizers publish events.') }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ch-band" id="features">
+  <div class="container">
+    <div class="ch-band-head">
+      <span class="ch-eyebrow">Features</span>
+      <h2>Much more than event registration</h2>
+      <p>Each feature solves a real problem in running events on campus.</p>
+    </div>
+    <div class="row g-4 gx-lg-5">
+      <div class="col-lg-6">
+        <div class="ch-feature">
+          <span class="ch-feature-icon"><i class="bi bi-qr-code-scan"></i></span>
+          <div>
+            <h3>QR attendance you can trust</h3>
+            <p>Every registration gets a signed, unique QR code. The logistics team scans it and the
+              server checks the registration, the event and any earlier check-in, so duplicates and
+              forged codes are rejected.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="ch-feature">
+          <span class="ch-feature-icon"><i class="bi bi-chat-square-text"></i></span>
+          <div>
+            <h3>An AI assistant that never guesses</h3>
+            <p>Ask about timings, venue or rules. Answers come only from the official event details and the
+              PDF the organizer uploaded. If it is not written there, the assistant says so.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="ch-feature">
+          <span class="ch-feature-icon"><i class="bi bi-shield-check"></i></span>
+          <div>
+            <h3>Faculty oversight built in</h3>
+            <p>Events are proposed, reviewed and approved by faculty before students ever see them, with
+              remarks, readiness tracking and participation reports.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="ch-feature">
+          <span class="ch-feature-icon"><i class="bi bi-clipboard-check"></i></span>
+          <div>
+            <h3>Logistics with a readiness score</h3>
+            <p>A shared checklist covers venue, equipment, seating, refreshments and volunteers, and turns
+              progress into a clear event readiness percentage.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ch-band ch-band-alt">
+  <div class="container">
+    <div class="ch-band-head">
+      <span class="ch-eyebrow">Student journey</span>
+      <h2>From discovery to certificate</h2>
+    </div>
+    <div class="ch-journey">
+      <div><i class="bi bi-compass"></i><h3>Discover</h3><p>Browse and search published events and communities.</p></div>
+      <div><i class="bi bi-ticket-perforated"></i><h3>Register</h3><p>Get a unique registration ID and personal QR code.</p></div>
+      <div><i class="bi bi-qr-code-scan"></i><h3>Attend</h3><p>Check in by QR at the door. Ask the assistant anything.</p></div>
+      <div><i class="bi bi-patch-check"></i><h3>Earn</h3><p>Receive certificates and achievements for taking part.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="ch-band" id="how-it-works">
+  <div class="container">
+    <div class="row g-4 gx-lg-5">
+      <div class="col-lg-4">
+        <div class="ch-band-head">
+          <span class="ch-eyebrow">How it works</span>
+          <h2>One workflow, four roles</h2>
+          <p>Each step hands over cleanly to the next team.</p>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="ch-steps">
+          <div class="ch-step"><div><h3>Organizer proposes</h3><p>Create an event, upload the official PDF and submit it for approval.</p></div></div>
+          <div class="ch-step"><div><h3>Faculty reviews</h3><p>Approve with confidence or reject with remarks. Approval opens the logistics checklist.</p></div></div>
+          <div class="ch-step"><div><h3>Event is published</h3><p>Students discover it, register and receive their QR code.</p></div></div>
+          <div class="ch-step"><div><h3>Logistics runs the day</h3><p>Tasks are completed, readiness reaches 100% and QR codes are scanned at entry.</p></div></div>
+          <div class="ch-step"><div><h3>Certificates are issued</h3><p>Attendees receive verifiable certificates and faculty see the results.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ch-band ch-band-alt" id="roles">
+  <div class="container">
+    <div class="ch-band-head">
+      <span class="ch-eyebrow">Roles</span>
+      <h2>Built for everyone involved</h2>
+      <p>CollegeHub has exactly four roles, each with a focused workspace.</p>
+    </div>
+    <div class="tw-grid tw-gap-4 sm:tw-grid-cols-2 lg:tw-grid-cols-4">
+      <div class="ch-role">
+        <h3><i class="bi bi-mortarboard"></i>Students</h3>
+        <ul><li>Find and register for events</li><li>Show a personal QR code</li><li>Ask the AI assistant</li><li>Collect certificates and achievements</li></ul>
+      </div>
+      <div class="ch-role">
+        <h3><i class="bi bi-calendar-event"></i>Organizers</h3>
+        <ul><li>Propose and manage events</li><li>Upload official documents</li><li>Approve volunteers</li><li>See registrations and attendance</li></ul>
+      </div>
+      <div class="ch-role">
+        <h3><i class="bi bi-truck"></i>Logistics</h3>
+        <ul><li>Work a shared checklist</li><li>Track readiness percentage</li><li>Scan QR codes at entry</li><li>Catch duplicate or invalid codes</li></ul>
+      </div>
+      <div class="ch-role">
+        <h3><i class="bi bi-bank"></i>Faculty</h3>
+        <ul><li>Review and approve proposals</li><li>Monitor participation</li><li>Publish announcements</li><li>Review event reports</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ch-band">
+  <div class="container">
+    <div class="ch-cta">
+      <h2>Run your next event on CollegeHub</h2>
+      <p>Join as a student to start registering, or log in with your organizer, logistics or faculty account.</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a class="btn btn-light btn-lg" href="{{ url_for('auth.register') }}">Create student account</a>
+        <a class="btn btn-outline-light-ch btn-lg" href="{{ url_for('auth.login') }}">Log in</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
