@@ -1,0 +1,57 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, field, textarea_field, select_field, csrf %}
+{% block title %}{{ 'Edit event' if event else 'Create event' }}{% endblock %}
+{% block content %}
+{% call page_header('Edit event' if event else 'Create event', 'Save as a draft any time. Submit when you are ready for faculty review.') %}{% endcall %}
+
+{% if event and event.status == 'rejected' and event.faculty_remarks %}
+<div class="alert alert-danger ch-alert"><i class="bi bi-chat-left-text me-2"></i><strong>Faculty remarks:</strong> {{ event.faculty_remarks }}</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate class="ch-mw-md">
+  {{ csrf() }}
+  <div class="ch-card ch-card-body mb-4">
+    <h2 class="mb-3">Basics</h2>
+    {{ field('title', 'Event title', form.get('title',''), 'text', errors, true, attrs='maxlength="160"') }}
+    {{ textarea_field('description', 'Description', form.get('description',''), errors, true, 6, 'What is the event about, who is it for, what will happen?', maxlength=5000) }}
+    <div class="row">
+      <div class="col-md-6">{{ select_field('category', 'Category', C.CATEGORY_OPTIONS, form.get('category',''), errors, true) }}</div>
+      <div class="col-md-6">{{ select_field('club_id', 'Club or community (optional)', club_options, form.get('club_id',''), errors, placeholder='None') }}</div>
+      <div class="col-md-6">{{ select_field('department', 'Department (optional)', C.DEPARTMENT_OPTIONS, form.get('department',''), errors, placeholder='Open to all') }}</div>
+      <div class="col-md-6">{{ field('faculty_coordinator', 'Faculty coordinator (optional)', form.get('faculty_coordinator',''), 'text', errors) }}</div>
+      <div class="col-md-6">{{ field('contact_info', 'Contact information (optional)', form.get('contact_info',''), 'text', errors, placeholder='Email or phone for questions') }}</div>
+      <div class="col-12">{{ field('eligibility', 'Eligibility (optional)', form.get('eligibility',''), 'text', errors, placeholder='e.g. All verified members; 2nd year and above') }}</div>
+      <div class="col-12">{{ textarea_field('schedule', 'Schedule (optional)', form.get('schedule',''), errors, false, 3, 'e.g. 10:00 Opening | 10:30 Keynote', maxlength=3000) }}</div>
+      <div class="col-12">{{ textarea_field('rules', 'Rules (optional)', form.get('rules',''), errors, false, 3, maxlength=3000) }}</div>
+    </div>
+  </div>
+
+  <div class="ch-card ch-card-body mb-4">
+    <h2 class="mb-3">When and where</h2>
+    {{ field('venue', 'Venue', form.get('venue',''), 'text', errors, true, 'e.g. Seminar Hall, Block B', attrs='maxlength="160"') }}
+    <div class="row">
+      <div class="col-md-4">{{ field('event_date', 'Date', form.get('event_date',''), 'date', errors, true) }}</div>
+      <div class="col-md-4">{{ field('start_time', 'Start time', form.get('start_time',''), 'time', errors, true) }}</div>
+      <div class="col-md-4">{{ field('end_time', 'End time', form.get('end_time',''), 'time', errors, true) }}</div>
+      <div class="col-md-6">{{ field('capacity', 'Capacity', form.get('capacity',''), 'number', errors, true, attrs='min="1" max="5000"') }}</div>
+      <div class="col-md-6">{{ field('registration_deadline', 'Registration deadline', form.get('registration_deadline',''), 'datetime-local', errors, true, help='Must be before the event starts.') }}</div>
+    </div>
+  </div>
+
+  <div class="ch-card ch-card-body mb-4">
+    <h2 class="mb-3">Cover image</h2>
+    <div class="mb-0">
+      <label class="form-label" for="f-cover">Cover image (optional)</label>
+      <input class="form-control{{ ' is-invalid' if errors.get('cover') }}" type="file" id="f-cover" name="cover" accept="image/png,image/jpeg,image/webp">
+      {% if errors.get('cover') %}<div class="invalid-feedback">{{ errors['cover'] }}</div>{% endif %}
+      <div class="form-text">PNG, JPG or WEBP, up to 3 MB.{% if event and event.image %} Uploading a new image replaces the current one.{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2">
+    <button class="btn btn-outline-secondary" type="submit" name="action" value="draft">Save draft</button>
+    <button class="btn btn-primary" type="submit" name="action" value="submit"><i class="bi bi-send me-1"></i>Save and submit for approval</button>
+    <a class="btn btn-link" href="{{ url_for('organizer.events') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, csrf, post_button, verification_badge, account_badge, empty_state %}
+{% block title %}Review {{ student.name }}{% endblock %}
+{% block content %}
+{% call page_header('Review member', student.name ~ ' · @' ~ student.username) %}
+  <a class="btn btn-outline-secondary" href="{{ url_for('organizer.members', status=student.verification_status or 'PENDING') }}"><i class="bi bi-arrow-left me-1"></i>Back to members</a>
+{% endcall %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    {% set person = student %}
+    {% include "partials/_profile_summary.html" %}
+    <div class="ch-card ch-card-body mt-4">
+      <h2 class="mb-3">Participation</h2>
+      <dl class="ch-kv mb-0">
+        <dt>Registered events</dt><dd>{{ stats.registered }}</dd>
+        <dt>Events attended</dt><dd>{{ stats.attended }}</dd>
+        <dt>Certificates</dt><dd>{{ stats.certificates }}</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="ch-card ch-card-body mb-4">
+      <h2 class="mb-3">Decision</h2>
+      <dl class="ch-kv mb-3">
+        <dt>Verification</dt><dd>{{ verification_badge(student) }}</dd>
+        <dt>Account</dt><dd>{{ account_badge(student) }}</dd>
+        {% if student.verified_at %}<dt>Verified</dt><dd>{{ student.verified_at|fmt_datetime }}{% if student.verified_by %} by {{ student.verified_by.name }}{% endif %}</dd>{% endif %}
+        {% if student.verification_reason %}<dt>Reason</dt><dd>{{ student.verification_reason }}</dd>{% endif %}
+      </dl>
+      {% if student.profile and not student.profile.is_complete %}
+      <div class="ch-notice ch-notice-warning mb-3"><i class="bi bi-exclamation-triangle"></i><div><p>The profile is incomplete (department, branch, semester, phone or bio missing). You can request a correction.</p></div></div>
+      {% endif %}
+      <div class="d-flex flex-wrap gap-2">
+        {% if student.verification_status in ('PENDING', 'REJECTED') and student.account_status == 'ACTIVE' %}
+          {{ post_button(url_for('organizer.member_decide', student_id=student.id, action='approve'), 'Approve', 'success', 'bi-check-lg', 'Verify ' ~ student.name ~ ' as a CollegeHub member?', size='md') }}
+        {% endif %}
+        {% if student.verification_status == 'PENDING' %}
+          <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#correctionModal"><i class="bi bi-pencil-square me-1"></i>Request correction</button>
+          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-1"></i>Reject</button>
+        {% endif %}
+        {% if student.verification_status == 'SUSPENDED' %}
+          {{ post_button(url_for('organizer.member_decide', student_id=student.id, action='reinstate'), 'Reinstate', 'primary', 'bi-arrow-counterclockwise', 'Reinstate this student?', size='md') }}
+        {% else %}
+          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#suspendModal"><i class="bi bi-slash-circle me-1"></i>Suspend</button>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">Verification history</h2>
+      {% if history %}
+      <ul class="list-unstyled mb-0">
+        {% for h in history %}
+        <li class="mb-3"><strong>{{ h.label }}</strong>
+          <span class="ch-sub d-block">{{ h.created_at|fmt_datetime }}{% if h.actor %} &middot; by {{ h.actor.name }}{% endif %}</span>
+          {% if h.reason %}<span class="ch-sub d-block">Reason: {{ h.reason }}</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="ch-muted mb-0">No actions recorded yet.</p>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% for key, title, action, button, tone, help in [
+  ('rejectModal', 'Reject verification', 'reject', 'Reject', 'danger', 'The student sees this reason and can correct their profile and resubmit.'),
+  ('correctionModal', 'Request a profile correction', 'correction', 'Request correction', 'primary', 'Tell the student exactly what to fix. They can then resubmit.'),
+  ('suspendModal', 'Suspend student', 'suspend', 'Suspend', 'danger', 'A suspended student cannot sign in. You can reinstate them later.') ] %}
+<div class="modal fade" id="{{ key }}" tabindex="-1" aria-labelledby="{{ key }}Label" aria-hidden="true">
+  <div class="modal-dialog"><form class="modal-content" method="post" action="{{ url_for('organizer.member_decide', student_id=student.id, action=action) }}">
+    {{ csrf() }}
+    <div class="modal-header"><h2 class="modal-title fs-5" id="{{ key }}Label">{{ title }}</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <label class="form-label" for="{{ key }}-reason">Reason <span class="ch-req">*</span></label>
+      <textarea class="form-control" id="{{ key }}-reason" name="reason" rows="3" minlength="5" maxlength="1000" required></textarea>
+      <div class="form-text">{{ help }}</div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-{{ tone }}">{{ button }}</button></div>
+  </form></div>
+</div>
+{% endfor %}
+{% endblock %}

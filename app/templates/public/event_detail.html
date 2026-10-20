@@ -1,0 +1,140 @@
+{% extends "layouts/public.html" if not current_user.is_authenticated else "layouts/app.html" %}
+{% from "components/macros.html" import event_cover, status_badge, csrf, meter, empty_state %}
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="{{ 'container py-5' if not current_user.is_authenticated else '' }}">
+  <nav aria-label="Breadcrumb" class="small mb-3">
+    <a href="{{ url_for('main.events') }}" class="ch-link"><i class="bi bi-arrow-left"></i> All events</a>
+  </nav>
+
+  {% if event.status != 'published' %}
+  <div class="alert alert-warning ch-alert"><i class="bi bi-eye me-2"></i>Preview: this event is <strong>{{ event.status_label|lower }}</strong> and is not visible to students yet.</div>
+  {% endif %}
+
+  <div class="ch-event-hero">{{ event_cover(event) }}</div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+        <span class="ch-chip"><i class="bi {{ event.icon }}"></i>{{ event.category }}</span>
+        {% if event.club %}<span class="ch-chip"><i class="bi bi-people"></i>{{ event.club.name }}</span>{% endif %}
+        {% if event.status != 'published' %}{{ status_badge(event.status) }}{% endif %}
+      </div>
+      <h1 class="mb-3">{{ event.title }}</h1>
+      <div class="ch-card ch-card-body mb-4">
+        <h2 class="mb-3">About this event</h2>
+        <p class="ch-prewrap mb-0">{{ event.description }}</p>
+      </div>
+      {% if event.eligibility or event.schedule or event.rules or event.contact_info or event.faculty_coordinator or event.department %}
+      <div class="ch-card ch-card-body mb-4">
+        <h2 class="mb-3">Event information</h2>
+        <dl class="ch-kv mb-0">
+          {% if event.department %}<dt>Department</dt><dd>{{ event.department }}</dd>{% endif %}
+          {% if event.faculty_coordinator %}<dt>Faculty coordinator</dt><dd>{{ event.faculty_coordinator }}</dd>{% endif %}
+          {% if event.eligibility %}<dt>Eligibility</dt><dd>{{ event.eligibility }}</dd>{% endif %}
+          {% if event.schedule %}<dt>Schedule</dt><dd class="ch-prewrap">{{ event.schedule }}</dd>{% endif %}
+          {% if event.rules %}<dt>Rules</dt><dd class="ch-prewrap">{{ event.rules }}</dd>{% endif %}
+          {% if event.contact_info %}<dt>Contact</dt><dd>{{ event.contact_info }}</dd>{% endif %}
+        </dl>
+      </div>
+      {% endif %}
+
+      {% if announcements %}
+      <div class="ch-card mb-4">
+        <div class="ch-card-head"><h2>Announcements</h2></div>
+        <ul class="ch-list">
+          {% for a in announcements %}
+          <li><strong>{{ a.title }}</strong><span class="ch-sub">{{ a.created_at|fmt_datetime }}</span>
+            <p class="mb-0 mt-1 small ch-prewrap">{{ a.message }}</p></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if opportunities %}
+      <div class="ch-card mb-4">
+        <div class="ch-card-head"><h2>Volunteer for this event</h2>
+          <a class="ch-link" href="{{ url_for('student.volunteering_page') }}">View roles</a></div>
+        <ul class="ch-list">
+          {% for o in opportunities %}
+          <li class="ch-row"><div><strong>{{ o.title }}</strong><span class="ch-sub">{{ o.slots_left }} slot{{ '' if o.slots_left == 1 else 's' }} left</span></div></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if can_ask and current_user.is_authenticated %}
+      <div class="ch-card" id="assistant">
+        <div class="ch-card-head">
+          <div><h2><i class="bi bi-chat-square-text me-2"></i>Ask the Event Assistant</h2>
+            <span class="ch-sub">Answers come only from the official details and uploaded documents.</span></div>
+          {% if ai_demo_mode %}<span class="ch-badge ch-badge-info"><i class="bi bi-cpu"></i>Demo mode</span>{% endif %}
+        </div>
+        <div class="ch-chat" data-ai-chat data-event-id="{{ event.id }}">
+          <div class="ch-chat-log" data-chat-log aria-live="polite">
+            <div class="ch-msg ch-msg-ai">Hi! Ask me about the timing, venue, deadline or anything in the official event documents.</div>
+          </div>
+          <div class="ch-suggest">
+            <button type="button" data-suggest="When does the event start?">When does it start?</button>
+            <button type="button" data-suggest="Where is the venue?">Where is it?</button>
+            <button type="button" data-suggest="What is the registration deadline?">Registration deadline?</button>
+          </div>
+          <form class="ch-chat-form" data-chat-form data-no-loading>
+            <input class="form-control" name="question" maxlength="300" autocomplete="off"
+                   placeholder="Type your question" aria-label="Your question">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i><span class="visually-hidden">Send</span></button>
+          </form>
+        </div>
+      </div>
+      {% elif not current_user.is_authenticated %}
+      <div class="ch-card ch-card-body">
+        <h2><i class="bi bi-chat-square-text me-2"></i>Event Assistant</h2>
+        <p class="ch-muted mb-3">Log in to ask questions answered from the official event documents.</p>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('auth.login', next=request.path) }}">Log in</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <aside class="col-lg-4">
+      <div class="ch-card ch-card-body ch-sticky-side">
+        <dl class="ch-kv mb-4">
+          <dt>Date</dt><dd>{{ event.event_date|fmt_date }}</dd>
+          <dt>Time</dt><dd>{{ event.start_time|fmt_time }} &ndash; {{ event.end_time|fmt_time }}</dd>
+          <dt>Venue</dt><dd>{{ event.venue }}</dd>
+          <dt>Organizer</dt><dd>{{ event.organizer.name }}</dd>
+          <dt>Register by</dt><dd>{{ event.registration_deadline|fmt_datetime }}</dd>
+          <dt>Seats</dt><dd>{{ event.seats_left }} of {{ event.capacity }} left</dd>
+        </dl>
+        {{ meter(((event.registered_count * 100) // event.capacity) if event.capacity else 0, 'Seats filled') }}
+
+        <div class="mt-4">
+          {% if registration and registration.is_confirmed %}
+            <div class="alert alert-success ch-alert mb-3"><i class="bi bi-check-circle-fill me-2"></i>You are registered.</div>
+            <a class="btn btn-primary w-100" href="{{ url_for('student.registration_detail', reg_id=registration.id) }}"><i class="bi bi-qr-code me-2"></i>View my QR code</a>
+          {% elif not current_user.is_authenticated %}
+            <a class="btn btn-primary w-100" href="{{ url_for('auth.login', next=request.path) }}">Log in to register</a>
+            <p class="small ch-muted text-center mt-2 mb-0">No account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
+          {% elif current_user.role != 'student' %}
+            <p class="small ch-muted mb-0">Only student accounts can register for events.</p>
+          {% elif block_reason %}
+            <div class="alert alert-warning ch-alert mb-0"><i class="bi bi-lock me-2"></i>{{ block_reason }}</div>
+          {% elif not current_user.is_verified %}
+            <div class="ch-notice ch-notice-warning"><i class="bi bi-patch-question"></i><div>
+              <h3>Verification required</h3>
+              <p>Only Verified CollegeHub Members can register. {{ 'Your profile is waiting for review.' if current_user.verification_status == 'PENDING' else 'Please update your profile and resubmit.' }}</p>
+              <a class="small" href="{{ url_for('student.profile') }}#verification">See verification status</a></div></div>
+          {% else %}
+            <form method="post" action="{{ url_for('student.register_event', event_id=event.id) }}">
+              {{ csrf() }}
+              <button class="btn btn-primary w-100" type="submit">Register for this event</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>{% endblock %}

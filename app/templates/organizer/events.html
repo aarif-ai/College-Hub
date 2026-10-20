@@ -1,0 +1,28 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, status_badge, empty_state %}
+{% block title %}My events{% endblock %}
+{% block content %}
+{% call page_header('My events', 'All events you organize, with their approval status.') %}
+  <a class="btn btn-primary" href="{{ url_for('organizer.event_new') }}"><i class="bi bi-plus-lg me-1"></i>Create event</a>
+{% endcall %}
+<ul class="nav nav-tabs mb-3" aria-label="Filter by status">
+  <li class="nav-item"><a class="nav-link {{ 'active' if not status }}" href="{{ url_for('organizer.events') }}">All</a></li>
+  {% for s in C.EVENT_STATUSES %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if status == s }}" href="{{ url_for('organizer.events', status=s) }}">{{ C.STATUS_LABELS[s] }}</a></li>
+  {% endfor %}
+</ul>
+<div class="ch-card">
+  {% if items %}
+  <div class="ch-table-wrap"><table class="ch-table">
+    <thead><tr><th>Event</th><th>Date</th><th>Registrations</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for e in items %}
+      <tr>
+        <td><a class="ch-table-title" href="{{ url_for('organizer.event_manage', event_id=e.id) }}">{{ e.title }}</a><span class="ch-sub">{{ e.venue }}</span></td>
+        <td>{{ e.event_date|fmt_short_date }}</td>
+        <td class="num">{{ e.registered_count }} / {{ e.capacity }}</td>
+        <td>{{ status_badge(e.status) }}</td>
+        <td class="text-end"><a class="btn btn-outline-secondary btn-sm" href="{{ url_for('organizer.event_manage', event_id=e.id) }}">Manage</a></td>
+      </tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty_state('bi-calendar-event', 'No events here', 'Create an event or choose a different status filter.', 'Create event', url_for('organizer.event_new')) }}{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, status_badge, stat_card, empty_state, meter, csrf, post_button, task_badge, badge, field, textarea_field, select_field %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block content %}
+<nav class="small mb-3"><a class="ch-link" href="{{ url_for('organizer.events') }}"><i class="bi bi-arrow-left"></i> My events</a></nav>
+{% call page_header(event.title, event.event_date|fmt_date ~ ' · ' ~ event.venue) %}
+  {{ status_badge(event.status) }}
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.event_detail', event_id=event.id) }}">{{ 'Public page' if event.status == 'published' else 'Preview' }}</a>
+  {% if can_edit %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('organizer.event_edit', event_id=event.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}
+{% endcall %}
+
+<ul class="nav nav-tabs ch-tabs-wrap" role="tablist" aria-label="Event sections">
+  {% set labels = {'overview':'Overview','registrations':'Registrations','documents':'Documents & AI','logistics':'Logistics','volunteers':'Volunteers','certificates':'Certificates','announcements':'Announcements'} %}
+  {% for t in tabs %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if t == tab }}" href="{{ url_for('organizer.event_manage', event_id=event.id, tab=t) }}">{{ labels[t] }}</a></li>
+  {% endfor %}
+</ul>
+
+{# ===== OVERVIEW ===== #}
+{% if tab == 'overview' %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">{{ stat_card('Registered', stats.registered ~ ' / ' ~ event.capacity, 'bi-ticket-perforated', hint=stats.fill_rate ~ '% full') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Attended', stats.attended, 'bi-qr-code-scan', hint=stats.attendance_rate ~ '% of registered', tone='good') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Logistics ready', stats.readiness ~ '%', 'bi-clipboard-check', tone='warn' if stats.readiness < 100 else 'good') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Volunteers', stats.volunteers, 'bi-hand-thumbs-up', tone='gold') }}</div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="ch-card ch-card-body mb-4">
+      <h2 class="mb-3">Lifecycle</h2>
+      <p class="mb-3">Status: {{ status_badge(event.status) }}</p>
+      {% if event.status == 'draft' %}
+        <p class="small ch-muted">Edit your draft, then submit it for faculty approval.</p>
+        {{ post_button(url_for('organizer.event_submit', event_id=event.id), 'Submit for approval', 'primary', 'bi-send', size='md') }}
+        {{ post_button(url_for('organizer.event_delete', event_id=event.id), 'Delete draft', 'outline-danger', 'bi-trash', 'Delete this draft permanently?', size='md') }}
+      {% elif event.status == 'submitted' %}
+        <p class="small ch-muted">Waiting for faculty review{% if event.submitted_at %} (submitted {{ event.submitted_at|fmt_datetime }}){% endif %}.</p>
+        {{ post_button(url_for('organizer.event_withdraw', event_id=event.id), 'Withdraw to draft', 'outline-secondary', 'bi-arrow-counterclockwise', size='md') }}
+      {% elif event.status == 'approved' %}
+        <div class="alert alert-success ch-alert"><i class="bi bi-check-circle me-2"></i>Approved{% if event.reviewer %} by {{ event.reviewer.name }}{% endif %}. Publish when you are ready for students to register.</div>
+        {% if event.faculty_remarks %}<p class="small"><strong>Faculty remarks:</strong> {{ event.faculty_remarks }}</p>{% endif %}
+        {{ post_button(url_for('organizer.event_publish', event_id=event.id), 'Publish event', 'success', 'bi-broadcast', 'Publish now? Students will be able to see and register for this event.', size='md') }}
+      {% elif event.status == 'rejected' %}
+        <div class="alert alert-danger ch-alert"><i class="bi bi-x-circle me-2"></i><strong>Rejected.</strong> {{ event.faculty_remarks }}</div>
+        <a class="btn btn-primary" href="{{ url_for('organizer.event_edit', event_id=event.id) }}">Revise and resubmit</a>
+      {% else %}
+        <p class="small ch-muted">Published {{ event.published_at|fmt_datetime }}. Students can register until {{ event.registration_deadline|fmt_datetime }}.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">Details</h2>
+      <dl class="ch-kv">
+        <dt>Category</dt><dd>{{ event.category }}</dd>
+        <dt>Club</dt><dd>{{ event.club.name if event.club else '-' }}</dd>
+        <dt>Time</dt><dd>{{ event.start_time|fmt_time }} &ndash; {{ event.end_time|fmt_time }}</dd>
+        <dt>Deadline</dt><dd>{{ event.registration_deadline|fmt_datetime }}</dd>
+        <dt>Capacity</dt><dd>{{ event.capacity }}</dd>
+        <dt>Updated</dt><dd>{{ event.updated_at|fmt_datetime }}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+{# ===== REGISTRATIONS ===== #}
+{% elif tab == 'registrations' %}
+<div class="ch-card">
+  <div class="ch-card-head"><h2>Registrations ({{ stats.registered }})</h2>
+    {% if registrations %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('organizer.registrations_export', event_id=event.id) }}"><i class="bi bi-download me-1"></i>Export CSV</a>{% endif %}</div>
+  {% if registrations %}
+  <div class="ch-table-wrap"><table class="ch-table">
+    <thead><tr><th>Student</th><th>Registration ID</th><th>Registered</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for r in registrations %}
+      <tr><td>{{ r.student.name }}<span class="ch-sub">{{ r.student.department }}</span></td>
+        <td class="ch-code">{{ r.reg_code }}</td><td>{{ r.created_at|fmt_datetime }}</td>
+        <td>{% if not r.is_confirmed %}{{ badge('Cancelled','danger') }}{% elif r.attendance %}{{ badge('Attended','success','bi-check2') }}{% else %}{{ badge('Registered','info') }}{% endif %}</td>
+        <td class="text-end">{% if r.is_confirmed and not r.attendance %}{{ post_button(url_for('organizer.registration_cancel', reg_id=r.id), 'Cancel', 'outline-danger', confirm='Cancel this student\'s registration?') }}{% endif %}</td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}{{ empty_state('bi-ticket-perforated', 'No registrations yet', 'Registrations appear here once the event is published and students sign up.') }}{% endif %}
+</div>
+
+{# ===== DOCUMENTS ===== #}
+{% elif tab == 'documents' %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-2">Upload official document</h2>
+      <p class="small ch-muted">The AI Event Assistant answers student questions from these PDFs and the event details. Upload schedules, rules, FAQs or brochures with selectable text.</p>
+      <form method="post" action="{{ url_for('organizer.document_upload', event_id=event.id) }}" enctype="multipart/form-data">
+        {{ csrf() }}
+        <div class="mb-3"><label class="form-label" for="document">PDF file</label>
+          <input class="form-control" type="file" id="document" name="document" accept="application/pdf,.pdf" required>
+          <div class="form-text">PDF only, up to {{ max_upload_mb }} MB.</div></div>
+        <button class="btn btn-primary" type="submit"><i class="bi bi-upload me-1"></i>Upload</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="ch-card">
+      <div class="ch-card-head"><h2>Uploaded documents</h2></div>
+      {% if event.documents %}
+      <ul class="ch-list">{% for d in event.documents %}
+        <li class="ch-row"><div><i class="bi bi-file-earmark-pdf text-danger me-1"></i><strong>{{ d.original_filename }}</strong>
+          <span class="ch-sub">{{ d.page_count }} page{{ '' if d.page_count == 1 else 's' }} &middot; {{ (d.size_bytes / 1024)|round|int }} KB &middot; {{ d.uploaded_at|fmt_datetime }}</span>
+          {% if d.has_text %}{{ badge('Readable by AI','success','bi-check2') }}{% else %}{{ badge('No text found','warning') }}{% endif %}</div>
+          <div>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.document_download', document_id=d.id) }}">Download</a>
+            {{ post_button(url_for('organizer.document_delete', document_id=d.id), 'Remove', 'outline-danger', confirm='Remove this document? The AI assistant will stop using it.') }}
+          </div></li>
+      {% endfor %}</ul>
+      {% else %}{{ empty_state('bi-file-earmark-pdf', 'No documents uploaded', 'Without documents the assistant can only use the event details.') }}{% endif %}
+    </div>
+  </div>
+</div>
+
+{# ===== LOGISTICS ===== #}
+{% elif tab == 'logistics' %}
+{% if event.status not in ('approved', 'published') %}
+  <div class="ch-card">{{ empty_state('bi-clipboard-check', 'Checklist opens after approval', 'Once faculty approve this event, the logistics checklist is created automatically.') }}</div>
+{% else %}
+<div class="ch-card ch-card-body mb-4">{{ meter(readiness.percent, 'Event readiness (' ~ readiness.completed ~ ' of ' ~ readiness.total ~ ' tasks complete)', 'good' if readiness.percent == 100 else '') }}</div>
+<div class="ch-card mb-4">
+  <div class="ch-table-wrap"><table class="ch-table">
+    <thead><tr><th>Task</th><th>Assigned to</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+    <tbody>{% for t in event.tasks %}
+      <tr>
+        <td><form method="post" action="{{ url_for('organizer.task_update', task_id=t.id) }}" id="t{{ t.id }}">{{ csrf() }}<input type="hidden" name="next" value="{{ url_for('organizer.event_manage', event_id=event.id, tab='logistics') }}"></form><strong>{{ t.title }}</strong><span class="ch-sub">{{ t.area }}</span></td>
+        <td><input class="form-control form-control-sm" form="t{{ t.id }}" name="assigned_to" value="{{ t.assigned_to or '' }}" aria-label="Assigned to"></td>
+        <td><select class="form-select form-select-sm" form="t{{ t.id }}" name="status" aria-label="Status">{% for v, l in C.TASK_STATUS_OPTIONS %}<option value="{{ v }}" {{ 'selected' if v == t.status }}>{{ l }}</option>{% endfor %}</select></td>
+        <td><input class="form-control form-control-sm" form="t{{ t.id }}" name="notes" value="{{ t.notes or '' }}" aria-label="Notes"></td>
+        <td class="text-end"><button class="btn btn-outline-secondary btn-sm" form="t{{ t.id }}" type="submit">Save</button></td></tr>
+    {% endfor %}</tbody></table></div>
+</div>
+<div class="ch-card ch-card-body">
+  <h2 class="mb-3">Add a task</h2>
+  <form method="post" action="{{ url_for('organizer.task_create', event_id=event.id) }}" class="row g-2">
+    {{ csrf() }}
+    <div class="col-md-5"><input class="form-control" name="title" placeholder="Task title" required minlength="3" aria-label="Task title"></div>
+    <div class="col-md-3"><input class="form-control" name="area" placeholder="Area (e.g. Equipment)" aria-label="Area"></div>
+    <div class="col-md-2"><input class="form-control" name="assigned_to" placeholder="Assigned to" aria-label="Assigned to"></div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary" type="submit">Add</button></div>
+  </form>
+</div>
+{% endif %}
+
+{# ===== VOLUNTEERS ===== #}
+{% elif tab == 'volunteers' %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">New volunteer opportunity</h2>
+      <form method="post" action="{{ url_for('organizer.opportunity_create', event_id=event.id) }}">
+        {{ csrf() }}
+        {{ field('title', 'Role title', '', 'text', {}, true, 'e.g. Registration desk helper') }}
+        {{ textarea_field('description', 'What will volunteers do?', '', {}, true, 3) }}
+        {{ field('slots', 'Number of slots', 5, 'number', {}, true, attrs='min="1" max="200"') }}
+        <button class="btn btn-primary" type="submit">Create opportunity</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    {% for o in event.opportunities %}
+    <div class="ch-card mb-3">
+      <div class="ch-card-head"><div><h3>{{ o.title }}</h3><span class="ch-sub">{{ o.approved_count }} of {{ o.slots }} filled</span></div></div>
+      {% if o.applications %}
+      <ul class="ch-list">{% for a in o.applications %}
+        <li class="ch-row"><div><strong>{{ a.student.name }}</strong><span class="ch-sub">{{ a.message or 'No message' }}</span></div>
+          <div>{% if a.status == 'pending' %}
+            {{ post_button(url_for('organizer.application_decide', app_id=a.id, decision='approve'), 'Approve', 'success') }}
+            {{ post_button(url_for('organizer.application_decide', app_id=a.id, decision='reject'), 'Reject', 'outline-danger') }}
+          {% else %}{{ badge(a.status|capitalize, 'success' if a.status == 'approved' else 'danger') }}{% endif %}</div></li>
+        {% if a.status == 'approved' %}
+        <li class="ch-row"><form class="d-flex gap-2 flex-wrap w-100 align-items-center" method="post" action="{{ url_for('organizer.application_assign', app_id=a.id) }}">
+          {{ csrf() }}<label class="small ch-muted mb-0" for="as{{ a.id }}">Responsibility</label>
+          <input class="form-control form-control-sm" style="max-width:20rem" id="as{{ a.id }}" name="assignment" value="{{ a.assignment or o.title }}" maxlength="120" required>
+          <button class="btn btn-outline-secondary btn-sm" type="submit">Assign</button></form></li>
+        {% endif %}
+      {% endfor %}</ul>
+      {% else %}<div class="ch-card-body ch-muted small">No applications yet.</div>{% endif %}
+    </div>
+    {% else %}
+    <div class="ch-card">{{ empty_state('bi-hand-thumbs-up', 'No opportunities yet', 'Create a role and students can apply once the event is published.') }}</div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ===== CERTIFICATES ===== #}
+{% elif tab == 'certificates' %}
+<div class="ch-card ch-card-body">
+  <h2 class="mb-2">Certificates of participation</h2>
+  <p class="ch-muted">Only verified students whose attendance was recorded by QR scan receive a certificate, and only after the event is completed. {{ stats.attended }} attended, {{ stats.certificates }} certificate{{ '' if stats.certificates == 1 else 's' }} issued.</p>
+  {% if event.status == 'completed' %}
+    {{ post_button(url_for('organizer.certificates_issue', event_id=event.id), 'Issue certificates to attendees', 'primary', 'bi-patch-check', 'Issue certificates to every checked-in attendee who does not have one yet?', size='md') }}
+  {% elif event.status == 'published' %}
+    <p class="small ch-muted">Mark the event as completed once it has taken place. Attendance scanning closes at that point.</p>
+    {% if event.start_datetime <= now_local %}
+      {{ post_button(url_for('organizer.event_complete', event_id=event.id), 'Mark event as completed', 'success', 'bi-flag', 'Mark this event as completed? Check-in scanning will close.', size='md') }}
+    {% else %}<p class="small ch-muted mb-0">Available once the event has started.</p>{% endif %}
+  {% else %}<p class="small ch-muted mb-0">Available after the event is published and completed.</p>{% endif %}
+</div>
+
+{# ===== ANNOUNCEMENTS ===== #}
+{% elif tab == 'announcements' %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">Post an announcement</h2>
+      <form method="post" action="{{ url_for('organizer.announcement_create', event_id=event.id) }}">
+        {{ csrf() }}
+        {{ field('title', 'Title', '', 'text', {}, true) }}
+        {{ textarea_field('message', 'Message', '', {}, true, 4) }}
+        {{ select_field('audience', 'Audience', C.AUDIENCE_OPTIONS, 'students', {}, true) }}
+        <button class="btn btn-primary" type="submit">Publish</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="ch-card"><div class="ch-card-head"><h2>Posted for this event</h2></div>
+      {% if event.announcements %}<ul class="ch-list">{% for a in event.announcements|sort(attribute='created_at', reverse=true) %}
+        <li><strong>{{ a.title }}</strong><span class="ch-sub">{{ a.created_at|fmt_datetime }} &middot; {{ C.AUDIENCE_LABELS[a.audience] }}</span><p class="small mb-0 mt-1">{{ a.message }}</p></li>{% endfor %}</ul>
+      {% else %}{{ empty_state('bi-megaphone', 'Nothing posted yet') }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

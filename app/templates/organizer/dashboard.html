@@ -1,0 +1,68 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, section_title, status_badge, empty_state, meter %}
+{% block title %}Organizer dashboard{% endblock %}
+{% block content %}
+{% call page_header('Organizer dashboard', 'Manage your events from proposal to certificates.') %}
+  <a class="btn btn-primary" href="{{ url_for('organizer.event_new') }}"><i class="bi bi-plus-lg me-1"></i>Create event</a>
+{% endcall %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">{{ stat_card('Total events', stats.total, 'bi-calendar-event', href=url_for('organizer.events')) }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Drafts', stats.by_status.draft, 'bi-pencil-square', href=url_for('organizer.events', status='draft')) }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Pending approval', stats.by_status.submitted, 'bi-hourglass-split', href=url_for('organizer.events', status='submitted'), tone='warn') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Approved', stats.by_status.approved, 'bi-check2-square', href=url_for('organizer.events', status='approved')) }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Published', stats.by_status.published, 'bi-broadcast', href=url_for('organizer.events', status='published'), tone='good') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Registrations', stats.registrations, 'bi-ticket-perforated') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Attendance', stats.attendance, 'bi-qr-code-scan', tone='good') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Volunteers', stats.volunteers, 'bi-hand-thumbs-up', tone='gold') }}</div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="ch-card ch-card-body h-100">
+    <div class="ch-row"><div><strong><i class="bi bi-patch-check me-1"></i>Member verification</strong>
+      <span class="ch-sub">{{ members.PENDING }} waiting &middot; {{ members.VERIFIED }} verified &middot; {{ members.REJECTED }} rejected &middot; {{ members.SUSPENDED }} suspended</span></div>
+      <a class="btn {{ 'btn-primary' if members.PENDING else 'btn-outline-secondary' }} btn-sm" href="{{ url_for('organizer.members') }}">Review{% if members.PENDING %} ({{ members.PENDING }}){% endif %}</a></div></div></div>
+  <div class="col-md-6"><div class="ch-card ch-card-body h-100">
+    <div class="ch-row"><div><strong><i class="bi bi-key me-1"></i>Logistics account</strong>
+      <span class="ch-sub">{% if logistics_account %}@{{ logistics_account.username }} &middot; {{ logistics_account.account_status|capitalize }}{% else %}Not created yet{% endif %}</span></div>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('organizer.logistics_account') }}">Manage</a></div></div></div>
+</div>
+
+{% if needs_action %}
+<div class="alert alert-info ch-alert mb-4">
+  <i class="bi bi-lightbulb me-2"></i><strong>Needs your attention:</strong>
+  {% for e in needs_action %}
+    <a href="{{ url_for('organizer.event_manage', event_id=e.id) }}">{{ e.title }}</a> ({{ 'approved, ready to publish' if e.status == 'approved' else 'rejected, see faculty remarks' }}){{ ', ' if not loop.last }}
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    {{ section_title('Recent events', 'All events', url_for('organizer.events')) }}
+    <div class="ch-card">
+      {% if events %}
+      <div class="ch-table-wrap"><table class="ch-table">
+        <thead><tr><th>Event</th><th>Date</th><th>Status</th></tr></thead>
+        <tbody>{% for e in events %}
+          <tr><td><a class="ch-table-title" href="{{ url_for('organizer.event_manage', event_id=e.id) }}">{{ e.title }}</a><span class="ch-sub">{{ e.category }}</span></td>
+            <td>{{ e.event_date|fmt_short_date }}</td><td>{{ status_badge(e.status) }}</td></tr>
+        {% endfor %}</tbody></table></div>
+      {% else %}{{ empty_state('bi-calendar-plus', 'Create your first event', 'Draft a proposal and submit it for faculty approval.', 'Create event', url_for('organizer.event_new')) }}{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    {{ section_title('Event performance', 'Analytics', url_for('organizer.analytics_page')) }}
+    <div class="ch-card ch-card-body">
+      {% if stats.performance %}
+        <div class="d-grid gap-4">
+        {% for event, s in stats.performance[:4] %}
+          <div><a class="ch-table-title small" href="{{ url_for('organizer.event_manage', event_id=event.id) }}">{{ event.title }}</a>
+            <div class="mt-2">{{ meter(s.fill_rate, 'Seats filled (' ~ s.registered ~ '/' ~ event.capacity ~ ')') }}</div>
+            <div class="mt-2">{{ meter(s.attendance_rate, 'Attendance (' ~ s.attended ~ ' of ' ~ s.registered ~ ')', 'good') }}</div></div>
+        {% endfor %}</div>
+      {% else %}<p class="ch-muted small mb-0">Performance appears here once an event is published and students register.</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

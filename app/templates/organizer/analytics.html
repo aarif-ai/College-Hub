@@ -1,0 +1,25 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, stat_card, meter, empty_state %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+{% call page_header('Event analytics', 'How your published events are performing.') %}{% endcall %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">{{ stat_card('Published events', stats.by_status.published, 'bi-broadcast') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Total registrations', stats.registrations, 'bi-ticket-perforated') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Total attendance', stats.attendance, 'bi-qr-code-scan', tone='good') }}</div>
+  <div class="col-6 col-lg-3">{{ stat_card('Volunteers', stats.volunteers, 'bi-hand-thumbs-up', tone='gold') }}</div>
+</div>
+<div class="ch-card">
+  <div class="ch-card-head"><h2>Per event</h2></div>
+  {% if stats.performance %}
+  <div class="ch-table-wrap"><table class="ch-table">
+    <thead><tr><th>Event</th><th class="num">Registered</th><th>Seats filled</th><th class="num">Attended</th><th>Attendance</th><th class="num">Certificates</th></tr></thead>
+    <tbody>{% for e, s in stats.performance %}
+      <tr><td><a class="ch-table-title" href="{{ url_for('organizer.event_manage', event_id=e.id) }}">{{ e.title }}</a><span class="ch-sub">{{ e.event_date|fmt_short_date }}</span></td>
+        <td class="num">{{ s.registered }} / {{ e.capacity }}</td><td style="min-width:140px">{{ meter(s.fill_rate, '') }}<span class="ch-sub">{{ s.fill_rate }}%</span></td>
+        <td class="num">{{ s.attended }}</td><td style="min-width:140px">{{ meter(s.attendance_rate, '', 'good') }}<span class="ch-sub">{{ s.attendance_rate }}%</span></td>
+        <td class="num">{{ s.certificates }}</td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}{{ empty_state('bi-bar-chart-line', 'No published events yet', 'Analytics appear once an event is published.') }}{% endif %}
+</div>
+{% endblock %}

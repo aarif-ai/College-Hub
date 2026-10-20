@@ -1,0 +1,62 @@
+{% extends "layouts/public.html" if not current_user.is_authenticated else "layouts/app.html" %}
+{% from "components/macros.html" import event_card, empty_state, page_header, pager %}
+{% block title %}Explore events{% endblock %}
+
+{% block content %}
+<div class="{{ 'container py-5' if not current_user.is_authenticated else '' }}">
+  {% call page_header('Explore events', 'Search published events from every club and department.') %}{% endcall %}
+
+  <form class="ch-card ch-card-body mb-4" method="get" action="{{ url_for('main.events') }}" role="search" data-no-loading>
+    <div class="ch-filter-bar">
+      <div class="ch-filter-search">
+        <label class="form-label" for="q">Search</label>
+        <input class="form-control" type="search" id="q" name="q" value="{{ q }}" placeholder="Title, topic or venue">
+      </div>
+      <div>
+        <label class="form-label" for="category">Category</label>
+        <select class="form-select" id="category" name="category">
+          <option value="">All categories</option>
+          {% for c in C.CATEGORIES %}<option value="{{ c }}" {{ 'selected' if c == category }}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="club">Club</label>
+        <select class="form-select" id="club" name="club">
+          <option value="">All clubs</option>
+          {% for club in clubs %}<option value="{{ club.id }}" {{ 'selected' if club.id == club_id }}>{{ club.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="when">When</label>
+        <select class="form-select" id="when" name="when">
+          <option value="upcoming" {{ 'selected' if when == 'upcoming' }}>Upcoming</option>
+          <option value="past" {{ 'selected' if when == 'past' }}>Past</option>
+          <option value="all" {{ 'selected' if when == 'all' }}>All</option>
+        </select>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Filter</button>
+        {% if q or category or club_id or when != 'upcoming' %}
+          <a class="btn btn-outline-secondary" href="{{ url_for('main.events') }}">Clear</a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  {% if events %}
+    <p class="ch-muted small mb-3">{{ pagination.total }} event{{ '' if pagination.total == 1 else 's' }} found</p>
+    <div class="row g-4">
+      {% for event in events %}
+        <div class="col-md-6 col-xl-4">{{ event_card(event) }}</div>
+      {% endfor %}
+    </div>
+    {{ pager(pagination, 'main.events', q=q or None, category=category or None, club=club_id, when=when) }}
+  {% else %}
+    <div class="ch-card">
+      {{ empty_state('bi-search', 'No events match your search',
+         'Try a different keyword or clear the filters to see everything that is published.',
+         'Clear filters', url_for('main.events')) }}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header %}
+{% block title %}Logistics account{% endblock %}
+{% block content %}
+{% call page_header('Logistics account', 'You manage the one official Logistics team account. Logistics cannot create accounts or verify students.') %}{% endcall %}
+{% set role_name = 'Logistics' %}{% set manager_name = 'the Organizer' %}
+{% include "partials/_staff_account.html" %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, field, textarea_field, select_field, csrf, empty_state %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+{% call page_header('Announcements', 'Publish institutional announcements to students, organizers or logistics.') %}{% endcall %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ch-card ch-card-body">
+      <h2 class="mb-3">New announcement</h2>
+      <form method="post">
+        {{ csrf() }}
+        {{ field('title', 'Title', '', 'text', {}, true) }}
+        {{ textarea_field('message', 'Message', '', {}, true, 4) }}
+        {{ select_field('event_id', 'Related event (optional)', event_options, '', {}, placeholder='All events') }}
+        {{ select_field('audience', 'Audience', C.AUDIENCE_OPTIONS, 'all', {}, true) }}
+        <button class="btn btn-primary" type="submit">Publish announcement</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="ch-card">
+      <div class="ch-card-head"><h2>Recent announcements</h2></div>
+      {% if items %}<ul class="ch-list">{% for a in items %}
+        <li><div class="ch-row"><strong>{{ a.title }}</strong><span class="ch-sub">{{ a.created_at|fmt_datetime }}</span></div>
+          <p class="small mb-1 mt-1 ch-prewrap">{{ a.message }}</p>
+          <span class="ch-sub">{{ C.AUDIENCE_LABELS[a.audience] }} &middot; {{ a.author.name }}{% if a.event %} &middot; {{ a.event.title }}{% endif %}</span></li>
+      {% endfor %}</ul>
+      {% else %}{{ empty_state('bi-megaphone', 'No announcements yet') }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

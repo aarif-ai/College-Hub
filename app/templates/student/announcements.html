@@ -1,0 +1,19 @@
+{% extends "layouts/app.html" %}
+{% from "components/macros.html" import page_header, empty_state %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+{% call page_header('Announcements', 'Messages from faculty and the organizers of events you joined.') %}{% endcall %}
+<div class="ch-card">
+  {% if items %}
+  <ul class="ch-list">
+    {% for a in items %}
+    <li>
+      <div class="ch-row"><strong>{{ a.title }}</strong><span class="ch-sub">{{ a.created_at|fmt_datetime }}</span></div>
+      <p class="mb-1 mt-2 ch-prewrap">{{ a.message }}</p>
+      <span class="ch-sub">From {{ a.author.name }} ({{ a.author.role_label }}){% if a.event %} &middot; {{ a.event.title }}{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}{{ empty_state('bi-megaphone', 'No announcements yet', 'You will see updates here when faculty or event organizers post them.') }}{% endif %}
+</div>
+{% endblock %}
