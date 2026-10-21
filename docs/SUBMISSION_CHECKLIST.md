@@ -36,9 +36,9 @@
 
 ## GitHub evidence
 - [ ] Issues created and closed through pull requests
-- [ ] Each member has genuine commits on their own branch
-- [ ] Pull requests reviewed by a teammate
-- [ ] `main` protected; Contributors page shows all four members
+- [ ] Genuine commits, made as you did the work, on feature branches
+- [ ] Pull requests opened for each feature branch (you may review and merge your own; read the diff first)
+- [ ] `main` protected (pull request required); Contributors page shows your account
 - [ ] Release tag created (`git tag v1.0 && git push --tags`)
 
 ## Presentation

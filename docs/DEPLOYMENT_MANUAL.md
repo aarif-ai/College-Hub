@@ -1,5 +1,7 @@
 # Deployment manual
 
+Author: Aarif Mushtaq. A step-by-step PDF version, including the GitHub push for a solo developer, is `CollegeHub_Deployment_Guide.pdf` (delivered with the project).
+
 Pick the route that matches your goal:
 
 | Goal | Route |
@@ -7,7 +9,7 @@ Pick the route that matches your goal:
 | Demo on your own laptop (recommended for the final presentation) | **A. Local deployment** |
 | A public link to share | **B. Render + Neon (free tiers)** |
 
-> Free-tier limits change. The figures below were checked against the providers' own pages on **17 October 2026**. Re-check them before you rely on them (links at the end).
+> Free-tier limits change. The figures below were checked against the providers' own pages on **21 October 2026**. Re-check them before you rely on them (links at the end).
 
 ---
 
@@ -35,12 +37,13 @@ flask --app wsgi run --host 0.0.0.0 --port 5000
 - Spins down after **15 minutes** without traffic; the next request takes about **1 minute** to wake it.
 - **750 free instance hours** per month per workspace; if they run out, free services are suspended until next month.
 - **Ephemeral filesystem**: local files are lost on every redeploy, restart *and spin-down*. No persistent disks.
-- No SSH shell and no one-off jobs. Outbound SMTP ports are blocked.
+- No SSH shell and no one-off jobs. **Outbound SMTP ports 25, 465 and 587 are blocked**, so CollegeHub cannot send password-reset e-mails from Render's free tier (see consequence 6).
+- Rollbacks are limited to the two most recent previous deploys; Render may restart the service at any time.
 - Render's own docs say not to use free services for production applications.
 
 **Render free PostgreSQL**: 1 GB, but it **expires 30 days after creation**, with a 14-day grace period before the data is deleted. That is why this manual uses Neon for the database.
 
-**Neon free plan** (neon.com/pricing): 1 GB storage per project, 100 compute-unit-hours per project, compute suspends after 5 minutes idle (first query after idle is slower), no credit card, and the plan is described as permanent, not a trial.
+**Neon free plan** (neon.com/pricing): 1 GB storage per project (up to 100 projects), 100 compute-unit-hours per project, compute suspends after 5 minutes idle and this cannot be turned off (first query after idle is slower), no credit card, and the plan is described as permanent, not a trial.
 
 ### Consequences for CollegeHub
 
@@ -49,6 +52,7 @@ flask --app wsgi run --host 0.0.0.0 --port 5000
 3. **Seeding must run from your own computer** (Render's free tier has no shell). Point `DATABASE_URL` at Neon on your machine and run `flask --app wsgi seed` there.
 4. **Warm the site up** a minute before the demo by opening it once.
 5. The login throttle is per process and resets on restart. This is acceptable for a demo.
+6. **Password-reset e-mails cannot be sent** from the free tier (SMTP is blocked). Reset links are written to the Render log instead. For a short, supervised demo you may set `DEMO_SHOW_RESET_LINK=1` to show the link on screen, but this is **insecure** (anyone who knows a student's e-mail could reset the password); switch it off straight after. A real deployment needs an e-mail provider that allows SMTP on an open port or an HTTP e-mail API (not implemented in this project), or a paid host.
 
 ### Step by step
 
@@ -62,7 +66,7 @@ flask --app wsgi run --host 0.0.0.0 --port 5000
 ```bash
 export DATABASE_URL="postgresql://...neon connection string..."
 export DEMO_PASSWORD="choose-a-demo-password"      # do not keep the default on a public site
-flask --app wsgi seed
+flask --app wsgi seed          # demo data (public demo only). NEVER use --reset on a database that holds real data: it drops every table.
 # Real deployment without demo data: create the first Faculty Mentor instead
 flask --app wsgi create-faculty --username dr_example --email faculty@your-college.example --name "Dr. Example"
 ```

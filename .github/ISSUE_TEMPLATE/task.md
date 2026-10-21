@@ -1,6 +1,6 @@
 ---
 name: Task or feature
-about: A piece of work for the team
+about: A piece of work to do
 ---
 **Goal**
 

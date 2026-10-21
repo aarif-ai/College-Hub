@@ -182,7 +182,7 @@ Student e-mails look like `aisha_khan@demo.collegehub.test`.
 ## 13. Testing
 
 ```bash
-python -m pytest -q                         # 241 tests, in-memory SQLite
+python -m pytest -q                         # 244 tests, in-memory SQLite
 TEST_DATABASE_URL=postgresql://... python -m pytest -q   # same tests on PostgreSQL (use an empty database)
 ```
 
@@ -196,16 +196,11 @@ See `docs/DEPLOYMENT_MANUAL.md`: local deployment, Render (free web service) wit
 
 Work on feature branches, open pull requests into a protected `main`, get one review, then merge. See `docs/GITHUB_MANUAL.md`.
 
-## 16. Team members
+## 16. Author
 
-| Member | Area | Branch |
-|--------|------|--------|
-| Aarif | Backend, database, AI, QR, certificates | `feature/aarif-backend` |
-| Abrar | Frontend, design system, student experience | `feature/abrar-frontend` |
-| Mishar | Organizer and logistics experience | `feature/mishar-organizer` |
-| Hameem | Faculty, announcements, analytics, documentation | `feature/hameem-faculty` |
+Designed and built by **Aarif Mushtaq**, B.Tech Artificial Intelligence and Data Science, University of Kashmir (North Campus), as a final college project.
 
-File ownership is in `docs/FIVE_DAY_PLAN.md`.
+*Made with love by Aarif Mushtaq.* The credit appears in the site footer and at the bottom of every signed-in page (`app/templates/partials/_credit.html`).
 
 ## 17. Known limitations and future scope
 

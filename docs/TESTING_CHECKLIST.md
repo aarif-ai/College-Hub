@@ -3,7 +3,7 @@
 Start from a clean database: `flask --app wsgi seed --reset`, then `flask --app wsgi run`. Tick each line as you verify it. Record problems as GitHub issues.
 
 ## Automated tests first
-- [ ] `python -m pytest -q` passes (241 tests at the time of writing)
+- [ ] `python -m pytest -q` passes (244 tests at the time of writing)
 - [ ] `python -m pyflakes app tests` prints nothing
 
 ## Public pages

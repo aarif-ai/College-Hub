@@ -30,7 +30,7 @@ Seed highlights: **"AI for Everyone: Campus Tech Summit"** (published, 120 seats
 | 13 | **Forgot password** | Login page → *Forgot password* → enter an e-mail → generic message. (Dev only: the reset link shows when `DEMO_SHOW_RESET_LINK=1`.) Set a new password; the old link no longer works. | Student |
 | 14 | **Suspended / rejected** | Log in as `irfan.peer` (suspended: cannot sign in) and `sumaira.hamid` (rejected: sees the correction reason and **Resubmit**). | Student |
 | 15 | **Audit log** | Organizer member detail → *History*: actor, action, reason, time. | Organizer |
-| 16 | **Tests** | Terminal: `python -m pytest -q` → "241 passed" (run it before the demo to be sure of the current number). | – |
+| 16 | **Tests** | Terminal: `python -m pytest -q` → "244 passed" (run it before the demo to be sure of the current number). | – |
 | 17 | **GitHub evidence** | Show real Issues, branches, merged pull requests, Contributors. Only show what actually exists. | – |
 
 ## Questions to expect

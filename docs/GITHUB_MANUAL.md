@@ -10,8 +10,8 @@
 | **Commit** | A saved snapshot with a message |
 | **Push** | Send your commits to GitHub |
 | **Pull** | Bring other people's new commits to your computer |
-| **Pull request (PR)** | A request to merge your branch into `main`, where teammates review it |
-| **Review** | A teammate reads your changes and approves or asks for fixes |
+| **Pull request (PR)** | A request to merge your branch into `main`, where you read the diff before merging it |
+| **Review** | Reading the *Files changed* tab line by line before merging (a classmate or mentor can review too) |
 | **Merge** | Combine the branch into `main` |
 | **Conflict** | Two people changed the same lines; you decide what to keep |
 | **Issue** | A tracked task, bug or idea |
@@ -25,38 +25,34 @@ git clone https://github.com/<owner>/collegehub.git
 cd collegehub
 ```
 
-The repository owner creates the repo once, pushes the first commit, and adds teammates under **Settings → Collaborators**.
+You create the repo once and push the first commit. Optionally add a classmate or your mentor under **Settings → Collaborators** so they can review.
 
 ## Branches for this project
 
-| Person | Branch |
-|--------|--------|
-| Aarif | `feature/aarif-backend` |
-| Abrar | `feature/abrar-frontend` |
-| Mishar | `feature/mishar-organizer` |
-| Hameem | `feature/hameem-faculty` |
+You are the only developer, so keep it simple: `main` always works, and each piece of work gets a short branch.
 
-Create yours once, then keep working on it:
+| Branch | Use for |
+|--------|---------|
+| `feature/<topic>` | a new feature, e.g. `feature/member-verification` |
+| `fix/<topic>` | a bug fix, e.g. `fix/scanner-duplicate-message` |
+| `docs/<topic>` | documentation only |
 
 ```bash
 git checkout main
 git pull
-git checkout -b feature/abrar-frontend
+git checkout -b feature/member-verification
 ```
-
-For small separate tasks you may also create short branches such as `fix/scanner-duplicate-message` or `docs/user-manual`.
 
 ## Daily workflow
 
 ```bash
 git checkout main && git pull                 # 1. start from the latest main
-git checkout feature/abrar-frontend           # 2. go to your branch
-git merge main                                # 3. bring main's news into your branch
+git checkout -b feature/<topic>               # 2. one branch per piece of work
 # ...edit files...
-git status                                    # 4. what changed?
-git add app/templates/student/dashboard.html  # 5. stage specific files
+git status                                    # 3. what changed?
+git add app/templates/student/dashboard.html  # 4. stage specific files
 git commit -m "feat: add attendance card to student dashboard"
-git push -u origin feature/abrar-frontend     # 6. publish (first time with -u)
+git push -u origin feature/<topic>            # 5. publish (first time with -u)
 ```
 
 Commit small and often. Stage files by name (not `git add .`) so you never commit `.env`, the database or uploads.
@@ -77,18 +73,18 @@ Format: `type: short description in the present tense`.
 
 Good: `fix: block duplicate QR scan for cancelled registration`. Bad: `changes`, `final`, `asdf`.
 
-Commit history should be **genuine**: each person commits their own work as they do it. Do not rewrite or fabricate history.
+Commit history should be **genuine**: commit your own work as you do it. Do not back-date commits or rewrite history.
 
 ## Pull request, review, merge
 
 1. Push your branch, then on GitHub press **Compare & pull request** (base: `main`).
 2. Fill in the template: what changed, how you tested it, screenshots for UI.
 3. Run `python -m pytest -q` first; the CI check must be green.
-4. Request a review from a teammate. Reviewers read the **Files changed** tab, comment on lines, then **Approve** or **Request changes**.
+4. Read the **Files changed** tab yourself as if it were someone else's work (or ask a classmate or mentor to review). Look for secrets, stray files and missing tests.
 5. When approved and green, press **Squash and merge** (or *Merge*). Delete the branch.
-6. Everyone runs `git checkout main && git pull`.
+6. Locally: `git checkout main && git pull`.
 
-**Reviewing**: Does it run? Does it follow the file-ownership map? Is any secret or generated file included? Are tests added for new rules? Is the UI consistent with the design system?
+**Reviewing**: Does it run? Is any secret or generated file included? Are tests added for new rules? Is the UI consistent with the design system?
 
 ## Conflicts
 
@@ -104,9 +100,9 @@ their version
 
 1. Open the file, decide the final text, delete the three marker lines.
 2. `git add <file>` then `git commit` (Git writes the merge message).
-3. Run the tests. If unsure, ask the other person; do not just pick your side.
+3. Run the tests. If unsure which version is right, check the PR that introduced each side.
 
-The ownership map in `docs/FIVE_DAY_PLAN.md` exists to make conflicts rare. Shared files (`app/static/css/app.css`, `app/templates/components/macros.html`, `app/models.py`) change only through a short PR that others review quickly.
+Working alone, conflicts are rare; they mostly happen when you edit the same file on two branches. Merge each branch before starting the next.
 
 ## Issues
 
@@ -115,7 +111,7 @@ Create an issue for every task or bug: a clear title, steps to reproduce (for bu
 ## Protect `main`
 
 Repository **Settings → Branches → Add rule** for `main`:
-- Require a pull request before merging (1 approval)
+- Require a pull request before merging (set approvals to 0 if you are the only collaborator)
 - Require status checks to pass (the *CI* workflow)
 - Do not allow force pushes
 

@@ -31,8 +31,11 @@
         </ul>
       </div>
     </div>
+    <div class="ch-footer-credit py-4">
+      {% include "partials/_credit.html" %}
+    </div>
     <div class="ch-footer-bottom d-flex flex-wrap justify-content-between gap-2 py-3">
-      <span>&copy; {{ now_year if now_year is defined else 2026 }} CollegeHub. A college project.</span>
+      <span>&copy; {{ now_year if now_year is defined else 2026 }} CollegeHub. A final-year college project.</span>
       <span>University of Kashmir, North Campus</span>
     </div>
   </div>

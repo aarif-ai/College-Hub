@@ -114,7 +114,7 @@ Organizer uploads â†’ `documents.save_document`: extension must be `pdf`, size â
 - Assistant refuses everything: open the event's *Documents* tab; "No text found" means a scanned PDF.
 - QR camera will not open: needs HTTPS or `localhost`; check the browser permission; try manual entry.
 - Reset local data: stop the server, delete `instance/collegehub.db`, run `flask --app wsgi seed`. A schema change (like this version's) always needs this.
-- Tests: `python -m pytest -q` (241). Note: the test fixture keeps one app context open, so tests that switch between clients clear `g._login_user` first.
+- Tests: `python -m pytest -q` (244). Note: the test fixture keeps one app context open, so tests that switch between clients clear `g._login_user` first.
 
 ## 16. Environment variables
 

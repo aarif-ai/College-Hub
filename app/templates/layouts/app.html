@@ -9,6 +9,7 @@
       {% include "partials/_flash.html" %}
       {% block content %}{% endblock %}
     </main>
+    <footer class="ch-app-footer">{% with compact = true %}{% include "partials/_credit.html" %}{% endwith %}</footer>
   </div>
 </div>
 {% endblock %}
